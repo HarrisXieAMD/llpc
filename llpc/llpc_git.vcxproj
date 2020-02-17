@@ -1,0 +1,380 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="wNow.dbg|Win32">
+      <Configuration>wNow.dbg</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="wNow.rel|Win32">
+      <Configuration>wNow.rel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="wNow.dbg|x64">
+      <Configuration>wNow.dbg</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="wNow.rel|x64">
+      <Configuration>wNow.rel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{03132828-CB97-4E18-9145-4642B318D245}</ProjectGuid>
+    <RootNamespace>llpc</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='wNow.dbg|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='wNow.rel|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='wNow.dbg|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='wNow.rel|x64'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='wNow.dbg|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='wNow.rel|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='wNow.dbg|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='wNow.rel|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='wNow.dbg|x64'">
+    <IncludePath>$(IncludePath)</IncludePath>
+    <NMakeIncludeSearchPath>$(AmdDriverRoot)\xgl\icd\api\include\khronos;$(AmdDriverRoot)\xgl\icd\build\wNow64a\imported\llvm\B_dbg\include;$(AmdDriverRoot)\xgl\icd\imported\llvm-project\llvm\include;$(AmdDriverRoot)\xgl\icd\imported\pal\inc;$(AmdDriverRoot)\xgl\icd\imported\pal\inc\core;$(AmdDriverRoot)\xgl\icd\imported\pal\inc\util;builder;context;imported\chip\gfx6;imported\chip\gfx9;imported\llvm\opt;imported\metrohash\inc;imported\spirv;include;lower;patch;patch\gfx6\chip;patch\gfx9;patch\gfx9\chip;patch\generate;util;translator\include;translator\lib\SPIRV;translator\lib\SPIRV\libSPIRV;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>cd ../..
+make --no-print-directory dbg.quiet.wnow64a.llpc -j8</NMakeBuildCommandLine>
+    <NMakePreprocessorDefinitions>_UNICODE;_SPIRV_LLVM_API;LITTLEENDIAN_CPU;PAL_CLOSED_SOURCE=1;ICD_BUILD_APPPROFILE=1;ICD_BUILD_LLPC=1;ICD_BUILD_SCPC=1;LLPC_BUILD_VEGA20=1;LLPC_BUILD_RAVEN2=1;LLPC_BUILD_RENOIR=1;LLPC_BUILD_GFX10=1;LLPC_BUILD_NAVI12=1;LLPC_BUILD_NAVI14=1;LLPC_BUILD_NAVI21=1;LLPC_BUILD_NAVI21_LITE=1;LLPC_BUILD_NAVI22=1;PAL_BUILD_GFX9=1;PAL_BUILD_RENOIR=1;PAL_BUILD_GFX10=1;PAL_BUILD_NAVI12=1;PAL_BUILD_NAVI14=1;PAL_BUILD_NAVI21=1;PAL_BUILD_NAVI21_LITE=1;CHIP_HDR_RENOIR=1;CHIP_HDR_GFX10=1;CHIP_HDR_NAVI_LITE=1;CHIP_HDR_NAVI12=1;CHIP_HDR_NAVI14=1;CHIP_HDR_NAVI21=1;CHIP_HDR_NAVI21_LITE=1;LLPC_CLIENT_INTERFACE_MAJOR_VERSION=LLPC_INTERFACE_MAJOR_VERSION;PAL_CLIENT_INTERFACE_MAJOR_VERSION=518;VKI_3RD_PARTY_IP_ANISOTROPIC_LOD_COMPENSATION=1;VKI_3RD_PARTY_IP_PROPERTY_ID=1;VKI_BUILD_SHADER_DBG=1;VKI_KHR_SHADER_CLOCK=1;VKI_RAY_TRACING=1;VKI_NV_RAY_TRACING=1;NOMINMAX;UNICODE</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>cd ../..
+make --no-print-directory clobber.dbg.quiet.wnow64a.llpc -j8 &amp;&amp; make --no-print-directory dbg.quiet.wnow64a.llpc -j8</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd ../..
+make --no-print-directory clobber.dbg.quiet.wnow64a.llpc -j8</NMakeCleanCommandLine>
+    <NMakeOutput>icdapicompilerllpc.lib</NMakeOutput>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='wNow.dbg|Win32'">
+    <NMakeIncludeSearchPath>$(AmdDriverRoot)\xgl\icd\api\include\khronos;$(AmdDriverRoot)\xgl\icd\build\wNow\imported\llvm\B_dbg\include;$(AmdDriverRoot)\xgl\icd\imported\llvm-project\llvm\include;$(AmdDriverRoot)\xgl\icd\imported\pal\inc;$(AmdDriverRoot)\xgl\icd\imported\pal\inc\core;$(AmdDriverRoot)\xgl\icd\imported\pal\inc\util;builder;context;imported\chip\gfx6;imported\chip\gfx9;imported\llvm\opt;imported\metrohash\inc;imported\spirv;include;lower;patch;patch\gfx6\chip;patch\gfx9;patch\gfx9\chip;patch\generate;util;translator\include;translator\lib\SPIRV;translator\lib\SPIRV\libSPIRV;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>cd ../..
+make --no-print-directory dbg.quiet.wnow.llpc -j8</NMakeBuildCommandLine>
+    <NMakeOutput>icdapicompilerllpc.lib</NMakeOutput>
+    <NMakeForcedIncludes>
+    </NMakeForcedIncludes>
+    <IncludePath>$(IncludePath)</IncludePath>
+    <NMakePreprocessorDefinitions>_UNICODE;_SPIRV_LLVM_API;LITTLEENDIAN_CPU;PAL_CLOSED_SOURCE=1;ICD_BUILD_APPPROFILE=1;ICD_BUILD_LLPC=1;ICD_BUILD_SCPC=1;LLPC_BUILD_VEGA20=1;LLPC_BUILD_RAVEN2=1;LLPC_BUILD_RENOIR=1;LLPC_BUILD_GFX10=1;LLPC_BUILD_NAVI12=1;LLPC_BUILD_NAVI14=1;LLPC_BUILD_NAVI21=1;LLPC_BUILD_NAVI21_LITE=1;LLPC_BUILD_NAVI22=1;PAL_BUILD_GFX9=1;PAL_BUILD_RENOIR=1;PAL_BUILD_GFX10=1;PAL_BUILD_NAVI12=1;PAL_BUILD_NAVI14=1;PAL_BUILD_NAVI21=1;PAL_BUILD_NAVI21_LITE=1;CHIP_HDR_RENOIR=1;CHIP_HDR_GFX10=1;CHIP_HDR_NAVI_LITE=1;CHIP_HDR_NAVI12=1;CHIP_HDR_NAVI14=1;CHIP_HDR_NAVI21=1;CHIP_HDR_NAVI21_LITE=1;LLPC_CLIENT_INTERFACE_MAJOR_VERSION=LLPC_INTERFACE_MAJOR_VERSION;PAL_CLIENT_INTERFACE_MAJOR_VERSION=518;VKI_3RD_PARTY_IP_ANISOTROPIC_LOD_COMPENSATION=1;VKI_3RD_PARTY_IP_PROPERTY_ID=1;VKI_BUILD_SHADER_DBG=1;VKI_KHR_SHADER_CLOCK=1;VKI_RAY_TRACING=1;VKI_NV_RAY_TRACING=1;NOMINMAX;UNICODE</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>cd ../..
+make --no-print-directory clobber.dbg.quiet.wnow.llpc -j8 &amp;&amp; make --no-prin-directory dbg.quiet.wnow.llpc -j8</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd ../..
+make --no-print-directory clobber.dbg.quiet.wnow.llpc -j8</NMakeCleanCommandLine>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='wNow.rel|Win32'">
+    <IncludePath>$(IncludePath)</IncludePath>
+    <NMakeBuildCommandLine>cd ../..
+make --no-print-directory rel.quiet.wnow.llpc -j8</NMakeBuildCommandLine>
+    <NMakeIncludeSearchPath>$(AmdDriverRoot)\xgl\icd\api\include\khronos;$(AmdDriverRoot)\xgl\icd\build\wNow\imported\llvm\B_rel\include;$(AmdDriverRoot)\xgl\icd\imported\llvm-project\llvm\include;$(AmdDriverRoot)\xgl\icd\imported\pal\inc;$(AmdDriverRoot)\xgl\icd\imported\pal\inc\core;$(AmdDriverRoot)\xgl\icd\imported\pal\inc\util;builder;context;imported\chip\gfx6;imported\chip\gfx9;imported\llvm\opt;imported\metrohash\inc;imported\spirv;include;lower;patch;patch\gfx6\chip;patch\gfx9;patch\gfx9\chip;patch\generate;util;translator\include;translator\lib\SPIRV;translator\lib\SPIRV\libSPIRV;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakePreprocessorDefinitions>_UNICODE;_SPIRV_LLVM_API;LITTLEENDIAN_CPU;PAL_CLOSED_SOURCE=1;ICD_BUILD_APPPROFILE=1;ICD_BUILD_LLPC=1;ICD_BUILD_SCPC=1;LLPC_BUILD_VEGA20=1;LLPC_BUILD_RAVEN2=1;LLPC_BUILD_RENOIR=1;LLPC_BUILD_GFX10=1;LLPC_BUILD_NAVI12=1;LLPC_BUILD_NAVI14=1;LLPC_BUILD_NAVI21=1;LLPC_BUILD_NAVI21_LITE=1;LLPC_BUILD_NAVI22=1;PAL_BUILD_GFX9=1;PAL_BUILD_RENOIR=1;PAL_BUILD_GFX10=1;PAL_BUILD_NAVI12=1;PAL_BUILD_NAVI14=1;PAL_BUILD_NAVI21=1;PAL_BUILD_NAVI21_LITE=1;CHIP_HDR_RENOIR=1;CHIP_HDR_GFX10=1;CHIP_HDR_NAVI_LITE=1;CHIP_HDR_NAVI12=1;CHIP_HDR_NAVI14=1;CHIP_HDR_NAVI21=1;CHIP_HDR_NAVI21_LITE=1;LLPC_CLIENT_INTERFACE_MAJOR_VERSION=LLPC_INTERFACE_MAJOR_VERSION;PAL_CLIENT_INTERFACE_MAJOR_VERSION=518;VKI_3RD_PARTY_IP_ANISOTROPIC_LOD_COMPENSATION=1;VKI_3RD_PARTY_IP_PROPERTY_ID=1;VKI_BUILD_SHADER_DBG=1;VKI_KHR_SHADER_CLOCK=1;VKI_RAY_TRACING=1;VKI_NV_RAY_TRACING=1;NOMINMAX;UNICODE</NMakePreprocessorDefinitions>
+    <NMakeReBuildCommandLine>cd ../..
+make --no-print-directory clobber.rel.quiet.wnow.llpc -j8 &amp;&amp; make --no-print-directory rel.quiet.wnow.llpc -j8</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd ../..
+make --no-print-directory clobber.rel.quiet.wnow.llpc -j8</NMakeCleanCommandLine>
+    <NMakeOutput>icdapicompilerllpc.lib</NMakeOutput>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='wNow.rel|x64'">
+    <NMakeBuildCommandLine>cd ../..
+make --no-print-directory rel.quiet.wnow64a.llpc  -j8</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd ../..
+make --no-print-directory clobber.rel.quiet.wnow64a.llpc -j8 &amp;&amp; make --no-print-directory rel.quiet.wnow64a.llpc -j8</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd ../..
+make --no-print-directory clobber.rel.quiet.wnow64a.llpc -j8</NMakeCleanCommandLine>
+    <NMakeOutput>icdapicompilerllpc.lib</NMakeOutput>
+    <NMakePreprocessorDefinitions>_UNICODE;_SPIRV_LLVM_API;LITTLEENDIAN_CPU;PAL_CLOSED_SOURCE=1;ICD_BUILD_APPPROFILE=1;ICD_BUILD_LLPC=1;ICD_BUILD_SCPC=1;LLPC_BUILD_VEGA20=1;LLPC_BUILD_RAVEN2=1;LLPC_BUILD_RENOIR=1;LLPC_BUILD_GFX10=1;LLPC_BUILD_NAVI12=1;LLPC_BUILD_NAVI14=1;LLPC_BUILD_NAVI21=1;LLPC_BUILD_NAVI21_LITE=1;LLPC_BUILD_NAVI22=1;PAL_BUILD_GFX9=1;PAL_BUILD_RENOIR=1;PAL_BUILD_GFX10=1;PAL_BUILD_NAVI12=1;PAL_BUILD_NAVI14=1;PAL_BUILD_NAVI21=1;PAL_BUILD_NAVI21_LITE=1;CHIP_HDR_RENOIR=1;CHIP_HDR_GFX10=1;CHIP_HDR_NAVI_LITE=1;CHIP_HDR_NAVI12=1;CHIP_HDR_NAVI14=1;CHIP_HDR_NAVI21=1;CHIP_HDR_NAVI21_LITE=1;LLPC_CLIENT_INTERFACE_MAJOR_VERSION=LLPC_INTERFACE_MAJOR_VERSION;PAL_CLIENT_INTERFACE_MAJOR_VERSION=518;VKI_3RD_PARTY_IP_ANISOTROPIC_LOD_COMPENSATION=1;VKI_3RD_PARTY_IP_PROPERTY_ID=1;VKI_BUILD_SHADER_DBG=1;VKI_KHR_SHADER_CLOCK=1;VKI_RAY_TRACING=1;VKI_NV_RAY_TRACING=1;NOMINMAX;UNICODE</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath>$(AmdDriverRoot)\xgl\icd\api\include\khronos;$(AmdDriverRoot)\xgl\icd\build\wNow64a\imported\llvm\B_rel\include;$(AmdDriverRoot)\xgl\icd\imported\llvm-project\llvm\include;$(AmdDriverRoot)\xgl\icd\imported\pal\inc;$(AmdDriverRoot)\xgl\icd\imported\pal\inc\core;$(AmdDriverRoot)\xgl\icd\imported\pal\inc\util;builder;context;imported\chip\gfx6;imported\chip\gfx9;imported\llvm\opt;imported\metrohash\inc;imported\spirv;include;lower;patch;patch\gfx6\chip;patch\gfx9;patch\gfx9\chip;patch\generate;util;translator\include;translator\lib\SPIRV;translator\lib\SPIRV\libSPIRV;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='wNow.dbg|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='wNow.dbg|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='wNow.rel|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='wNow.rel|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="$(AmdDriverRoot)\xgl\icd\imported\pal\inc\core\g_palPipelineAbiMetadata.h" />
+    <ClInclude Include="$(AmdDriverRoot)\xgl\icd\imported\pal\inc\core\palPipelineAbi.h" />
+    <ClInclude Include="$(AmdDriverRoot)\xgl\icd\imported\pal\inc\util\palUtil.h" />
+    <ClInclude Include="builder\llpcBuilder.h" />
+    <ClInclude Include="builder\llpcBuilderContext.h" />
+    <ClInclude Include="builder\llpcBuilderImpl.h" />
+    <ClInclude Include="builder\llpcBuilderRecorder.h" />
+    <ClInclude Include="builder\llpcPipelineState.h" />
+    <ClInclude Include="builder\llpcSamplerYCbCrHelper.h" />
+    <ClInclude Include="builder\llpcShaderModes.h" />
+    <ClInclude Include="builder\llpcTargetInfo.h" />
+    <ClInclude Include="context\llpcCompiler.h" />
+    <ClInclude Include="context\llpcComputeContext.h" />
+    <ClInclude Include="context\llpcContext.h" />
+    <ClInclude Include="context\llpcGraphicsContext.h" />
+    <ClInclude Include="context\llpcPipelineContext.h" />
+    <ClInclude Include="context\llpcRayTracingContext.h" />
+    <ClInclude Include="context\llpcShaderCache.h" />
+    <ClInclude Include="context\llpcShaderCacheManager.h" />
+    <ClInclude Include="imported\chip\gfx6\si_ci_vi_merged_enum.h" />
+    <ClInclude Include="imported\chip\gfx6\si_ci_vi_merged_offset.h" />
+    <ClInclude Include="imported\chip\gfx6\si_ci_vi_merged_registers.h" />
+    <ClInclude Include="imported\chip\gfx6\si_ci_vi_merged_typedef.h" />
+    <ClInclude Include="imported\chip\gfx9\gfx9_plus_merged_enum.h" />
+    <ClInclude Include="imported\chip\gfx9\gfx9_plus_merged_offset.h" />
+    <ClInclude Include="imported\chip\gfx9\gfx9_plus_merged_registers.h" />
+    <ClInclude Include="imported\chip\gfx9\gfx9_plus_merged_typedef.h" />
+    <ClInclude Include="imported\metrohash\inc\metrohash.h" />
+    <ClInclude Include="imported\metrohash\inc\metrohash128.h" />
+    <ClInclude Include="imported\metrohash\inc\metrohash64.h" />
+    <ClInclude Include="imported\metrohash\inc\utils.h" />
+    <ClInclude Include="imported\spirv\spvgen.h" />
+    <ClInclude Include="imported\spirv\vfx.h" />
+    <ClInclude Include="include\llpc.h" />
+    <ClInclude Include="lower\llpcSpirvLower.h" />
+    <ClInclude Include="lower\llpcSpirvLowerAccessChain.h" />
+    <ClInclude Include="lower\llpcSpirvLowerAlgebraTransform.h" />
+    <ClInclude Include="lower\llpcSpirvLowerConstImmediateStore.h" />
+    <ClInclude Include="lower\llpcSpirvLowerGlobal.h" />
+    <ClInclude Include="lower\llpcSpirvLowerInstMetaRemove.h" />
+    <ClInclude Include="lower\llpcSpirvLowerLoopUnrollControl.h" />
+    <ClInclude Include="lower\llpcSpirvLowerMemoryOp.h" />
+    <ClInclude Include="lower\llpcSpirvLowerRayTracing.h" />
+    <ClInclude Include="lower\llpcSpirvLowerRayTracingBuiltIn.h" />
+    <ClInclude Include="lower\llpcSpirvLowerResourceCollect.h" />
+    <ClInclude Include="patch\gfx6\chip\llpcGfx6Chip.h" />
+    <ClInclude Include="patch\gfx6\chip\llpcGfx6ConfigBuilder.h" />
+    <ClInclude Include="patch\gfx9\chip\llpcGfx9Chip.h" />
+    <ClInclude Include="patch\gfx9\chip\llpcGfx9ConfigBuilder.h" />
+    <ClInclude Include="patch\gfx9\llpcNggLdsManager.h" />
+    <ClInclude Include="patch\gfx9\llpcNggPrimShader.h" />
+    <ClInclude Include="patch\gfx9\llpcShaderMerger.h" />
+    <ClInclude Include="patch\llpcAbiMetadata.h" />
+    <ClInclude Include="patch\llpcCodeGenManager.h" />
+    <ClInclude Include="patch\llpcConfigBuilderBase.h" />
+    <ClInclude Include="patch\llpcFragColorExport.h" />
+    <ClInclude Include="patch\llpcIntrinsDefs.h" />
+    <ClInclude Include="patch\llpcPatch.h" />
+    <ClInclude Include="patch\llpcPatchBufferOp.h" />
+    <ClInclude Include="patch\llpcPatchDescriptorLoad.h" />
+    <ClInclude Include="patch\llpcPatchEntryPointMutate.h" />
+    <ClInclude Include="patch\llpcPatchInOutImportExport.h" />
+    <ClInclude Include="patch\llpcPatchLlvmIrInclusion.h" />
+    <ClInclude Include="patch\llpcPatchLoadScalarizer.h" />
+    <ClInclude Include="patch\llpcPatchPeepholeOpt.h" />
+    <ClInclude Include="patch\llpcPatchPushConstOp.h" />
+    <ClInclude Include="patch\llpcPatchResourceCollect.h" />
+    <ClInclude Include="patch\llpcSystemValues.h" />
+    <ClInclude Include="patch\llpcVertexFetch.h" />
+    <ClInclude Include="translator\include\LLVMSPIRVLib.h" />
+    <ClInclude Include="translator\lib\SPIRV\bitutils.h" />
+    <ClInclude Include="translator\lib\SPIRV\hex_float.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\libSPIRV.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVBasicBlock.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVDebug.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVDecorate.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVEntry.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVEnum.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVError.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVErrorEnum.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\spirvExt.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVExtInst.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVFunction.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVInstruction.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVIsValidEnum.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVModule.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVNameMapEnum.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVOpCode.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVOpCodeEnum.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVStream.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVType.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVUtil.h" />
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVValue.h" />
+    <ClInclude Include="translator\lib\SPIRV\SPIRVInternal.h" />
+    <ClInclude Include="util\llpcDebug.h" />
+    <ClInclude Include="util\llpcElfReader.h" />
+    <ClInclude Include="util\llpcElfWriter.h" />
+    <ClInclude Include="util\llpcEmuLib.h" />
+    <ClInclude Include="util\llpcFile.h" />
+    <ClInclude Include="util\llpcGfxRegHandler.h" />
+    <ClInclude Include="util\llpcInternal.h" />
+    <ClInclude Include="util\llpcPassDeadFuncRemove.h" />
+    <ClInclude Include="util\llpcPassManager.h" />
+    <ClInclude Include="util\llpcPipelineDumper.h" />
+    <ClInclude Include="util\llpcPipelineShaders.h" />
+    <ClInclude Include="util\llpcShaderModuleHelper.h" />
+    <ClInclude Include="util\llpcSqImgRsrcRegHelper.h" />
+    <ClInclude Include="util\llpcSqImgSampRegHelper.h" />
+    <ClInclude Include="util\llpcTimerProfiler.h" />
+    <ClInclude Include="util\llpcUtil.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="builder\llpcBuilder.cpp" />
+    <ClCompile Include="builder\llpcBuilderContext.cpp" />
+    <ClCompile Include="builder\llpcBuilderImpl.cpp" />
+    <ClCompile Include="builder\llpcBuilderImplArith.cpp" />
+    <ClCompile Include="builder\llpcBuilderImplDesc.cpp" />
+    <ClCompile Include="builder\llpcBuilderImplImage.cpp" />
+    <ClCompile Include="builder\llpcBuilderImplInOut.cpp" />
+    <ClCompile Include="builder\llpcBuilderImplMatrix.cpp" />
+    <ClCompile Include="builder\llpcBuilderImplMisc.cpp" />
+    <ClCompile Include="builder\llpcBuilderImplSubgroup.cpp" />
+    <ClCompile Include="builder\llpcBuilderRecorder.cpp" />
+    <ClCompile Include="builder\llpcBuilderReplayer.cpp" />
+    <ClCompile Include="builder\llpcPipelineState.cpp" />
+    <ClCompile Include="builder\llpcSamplerYCbCrHelper.cpp" />
+    <ClCompile Include="builder\llpcShaderModes.cpp" />
+    <ClCompile Include="builder\llpcTargetInfo.cpp" />
+    <ClCompile Include="context\llpcCompiler.cpp" />
+    <ClCompile Include="context\llpcComputeContext.cpp" />
+    <ClCompile Include="context\llpcContext.cpp" />
+    <ClCompile Include="context\llpcGraphicsContext.cpp" />
+    <ClCompile Include="context\llpcPipelineContext.cpp" />
+    <ClCompile Include="context\llpcRayTracingContext.cpp" />
+    <ClCompile Include="context\llpcShaderCache.cpp" />
+    <ClCompile Include="context\llpcShaderCacheManager.cpp" />
+    <ClCompile Include="lower\llpcSpirvLower.cpp" />
+    <ClCompile Include="lower\llpcSpirvLowerAccessChain.cpp" />
+    <ClCompile Include="lower\llpcSpirvLowerAlgebraTransform.cpp" />
+    <ClCompile Include="lower\llpcSpirvLowerConstImmediateStore.cpp" />
+    <ClCompile Include="lower\llpcSpirvLowerGlobal.cpp" />
+    <ClCompile Include="lower\llpcSpirvLowerInstMetaRemove.cpp" />
+    <ClCompile Include="lower\llpcSpirvLowerLoopUnrollControl.cpp" />
+    <ClCompile Include="lower\llpcSpirvLowerMemoryOp.cpp" />
+    <ClCompile Include="lower\llpcSpirvLowerRayTracing.cpp" />
+    <ClCompile Include="lower\llpcSpirvLowerRayTracingBuiltIn.cpp" />
+    <ClCompile Include="lower\llpcSpirvLowerResourceCollect.cpp" />
+    <ClCompile Include="lower\llpcSpirvLowerTranslator.cpp" />
+    <ClCompile Include="patch\gfx6\chip\llpcGfx6Chip.cpp" />
+    <ClCompile Include="patch\gfx6\chip\llpcGfx6ConfigBuilder.cpp" />
+    <ClCompile Include="patch\gfx9\chip\llpcGfx9Chip.cpp" />
+    <ClCompile Include="patch\gfx9\chip\llpcGfx9ConfigBuilder.cpp" />
+    <ClCompile Include="patch\gfx9\llpcNggLdsManager.cpp" />
+    <ClCompile Include="patch\gfx9\llpcNggPrimShader.cpp" />
+    <ClCompile Include="patch\gfx9\llpcShaderMerger.cpp" />
+    <ClCompile Include="patch\llpcCodeGenManager.cpp" />
+    <ClCompile Include="patch\llpcConfigBuilderBase.cpp" />
+    <ClCompile Include="patch\llpcFragColorExport.cpp" />
+    <ClCompile Include="patch\llpcPatch.cpp" />
+    <ClCompile Include="patch\llpcPatchBufferOp.cpp" />
+    <ClCompile Include="patch\llpcPatchCheckShaderCache.cpp" />
+    <ClCompile Include="patch\llpcPatchCopyShader.cpp" />
+    <ClCompile Include="patch\llpcPatchDescriptorLoad.cpp" />
+    <ClCompile Include="patch\llpcPatchEntryPointMutate.cpp" />
+    <ClCompile Include="patch\llpcPatchGroupOp.cpp" />
+    <ClCompile Include="patch\llpcPatchInOutImportExport.cpp" />
+    <ClCompile Include="patch\llpcPatchLlvmIrInclusion.cpp" />
+    <ClCompile Include="patch\llpcPatchLoadScalarizer.cpp" />
+    <ClCompile Include="patch\llpcPatchNullFragShader.cpp" />
+    <ClCompile Include="patch\llpcPatchPeepholeOpt.cpp" />
+    <ClCompile Include="patch\llpcPatchPreparePipelineAbi.cpp" />
+    <ClCompile Include="patch\llpcPatchPushConstOp.cpp" />
+    <ClCompile Include="patch\llpcPatchResourceCollect.cpp" />
+    <ClCompile Include="patch\llpcPatchSetupTargetFeatures.cpp" />
+    <ClCompile Include="patch\llpcSystemValues.cpp" />
+    <ClCompile Include="patch\llpcVertexFetch.cpp" />
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVBasicBlock.cpp" />
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVDebug.cpp" />
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVDecorate.cpp" />
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVEntry.cpp" />
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVFunction.cpp" />
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVInstruction.cpp" />
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVModule.cpp" />
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVStream.cpp" />
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVType.cpp" />
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVValue.cpp" />
+    <ClCompile Include="translator\lib\SPIRV\SPIRVReader.cpp" />
+    <ClCompile Include="translator\lib\SPIRV\SPIRVUtil.cpp" />
+    <ClCompile Include="util\llpcDebug.cpp" />
+    <ClCompile Include="util\llpcElfReader.cpp" />
+    <ClCompile Include="util\llpcElfWriter.cpp" />
+    <ClCompile Include="util\llpcEmuLib.cpp" />
+    <ClCompile Include="util\llpcFile.cpp" />
+    <ClCompile Include="util\llpcGfxRegHandler.cpp" />
+    <ClCompile Include="util\llpcInternal.cpp" />
+    <ClCompile Include="util\llpcPassDeadFuncRemove.cpp" />
+    <ClCompile Include="util\llpcPassManager.cpp" />
+    <ClCompile Include="util\llpcPipelineDumper.cpp" />
+    <ClCompile Include="util\llpcPipelineShaders.cpp" />
+    <ClCompile Include="util\llpcShaderModuleHelper.cpp" />
+    <ClCompile Include="util\llpcSqImgRsrcRegHelper.cpp" />
+    <ClCompile Include="util\llpcSqImgSampRegHelper.cpp" />
+    <ClCompile Include="util\llpcStartStopTimer.cpp" />
+    <ClCompile Include="util\llpcTimerProfiler.cpp" />
+    <ClCompile Include="util\llpcUtil.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile.apicompilerllpc" />
+    <None Include="make\Makefile.llpc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="CMakeLists.txt" />
+    <Text Include="translator\LICENSE.TXT" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

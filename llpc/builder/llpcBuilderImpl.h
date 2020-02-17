@@ -442,6 +442,17 @@ public:
                              Value*            pCoord,
                              const Twine&      instName = "") override final;
 
+    // Common code to create an image sample or gather.
+    Value* CreateImageSampleGather(Type*            pResultTy,
+                                   uint32_t         dim,
+                                   uint32_t         flags,
+                                   Value*           pCoord,
+                                   Value*           pImageDesc,
+                                   Value*           pSamplerDesc,
+                                   ArrayRef<Value*> address,
+                                   const Twine&     instName,
+                                   bool             isSample);
+
 private:
     BuilderImplImage() = delete;
     BuilderImplImage(const BuilderImplImage&) = delete;
@@ -457,16 +468,16 @@ private:
                                          Type*    pTexelTy,
                                          Value*   pResult);
 
-    // Common code to create an image sample or gather.
-    Value* CreateImageSampleGather(Type*            pResultTy,
-                                   uint32_t         dim,
-                                   uint32_t         flags,
-                                   Value*           pCoord,
-                                   Value*           pImageDesc,
-                                   Value*           pSamplerDesc,
-                                   ArrayRef<Value*> address,
-                                   const Twine&     instName,
-                                   bool             isSample);
+    // Common code to create an image YCbCr sample.
+    Value* CreateImageYCbCrSample(Type*            pResultTy,
+                                  uint32_t         dim,
+                                  uint32_t         flags,
+                                  Value*           pCoord,
+                                  Value*           pImageDesc,
+                                  Value*           pSamplerDesc,
+                                  ArrayRef<Value*> address,
+                                  const Twine&     instName,
+                                  bool             isSample);
 
     // Common code for CreateImageAtomic and CreateImageAtomicCompareSwap
     Value* CreateImageAtomicCommon(uint32_t          atomicOp,

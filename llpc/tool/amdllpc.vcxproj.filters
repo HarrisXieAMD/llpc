@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="amdllpc.cpp" />
+    <ClCompile Include="vfx\vfxEnumsConverter.cpp">
+      <Filter>vfx</Filter>
+    </ClCompile>
+    <ClCompile Include="vfx\vfxParser.cpp">
+      <Filter>vfx</Filter>
+    </ClCompile>
+    <ClCompile Include="vfx\vfxPipelineDoc.cpp">
+      <Filter>vfx</Filter>
+    </ClCompile>
+    <ClCompile Include="vfx\vfxRenderDoc.cpp">
+      <Filter>vfx</Filter>
+    </ClCompile>
+    <ClCompile Include="vfx\vfxSection.cpp">
+      <Filter>vfx</Filter>
+    </ClCompile>
+    <ClCompile Include="llpcAutoLayout.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile.apicompilerllpctool" />
+    <None Include="vfx\Makefile.apicompilerllpctoolvfx">
+      <Filter>vfx</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="vfx">
+      <UniqueIdentifier>{5cd3aba3-b454-40af-abf3-3fab7c9c31c3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="vfx\vfx.h">
+      <Filter>vfx</Filter>
+    </ClInclude>
+    <ClInclude Include="vfx\vfxEnumsConverter.h">
+      <Filter>vfx</Filter>
+    </ClInclude>
+    <ClInclude Include="vfx\vfxError.h">
+      <Filter>vfx</Filter>
+    </ClInclude>
+    <ClInclude Include="vfx\vfxParser.h">
+      <Filter>vfx</Filter>
+    </ClInclude>
+    <ClInclude Include="vfx\vfxPipelineDoc.h">
+      <Filter>vfx</Filter>
+    </ClInclude>
+    <ClInclude Include="vfx\vfxRenderDoc.h">
+      <Filter>vfx</Filter>
+    </ClInclude>
+    <ClInclude Include="vfx\vfxSection.h">
+      <Filter>vfx</Filter>
+    </ClInclude>
+    <ClInclude Include="amdllpc.h" />
+  </ItemGroup>
+</Project>

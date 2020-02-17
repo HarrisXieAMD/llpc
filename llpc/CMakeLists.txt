@@ -320,6 +320,7 @@ if(ICD_BUILD_LLPC)
         util/llpcPipelineDumper.cpp
         util/llpcPipelineDumperRegs.cpp
         util/llpcPipelineShaders.cpp
+        util/llpcSamplerYCbCrHelper.cpp
         util/llpcShaderModuleHelper.cpp
         util/llpcStartStopTimer.cpp
         util/llpcTimerProfiler.cpp

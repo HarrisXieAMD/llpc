@@ -35,6 +35,8 @@
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/IntrinsicsAMDGPU.h"
 
+#include "llpcSamplerYCbCrHelper.h"
+
 #define DEBUG_TYPE "llpc-builder-impl-image"
 
 using namespace Llpc;
@@ -1221,6 +1223,66 @@ Value* BuilderImplImage::CreateImageStore(
 }
 
 // =====================================================================================================================
+// Create an image YCbCr sampler.
+// The caller supplies all arguments to the image sample op in "address", in the order specified
+// by the indices defined as ImageIndex* below.
+Value* BuilderImplImage::CreateImageYCbCrSample(
+    Type*                       pResultTy,      // [in] Result type
+    uint32_t                    dim,            // Image dimension
+    uint32_t                    flags,          // ImageFlag* flags
+    Value*                      pCoord,         // [in] Coordinates (the one in address is ignored in favor of this one)
+    Value*                      pImageDesc,     // [in] Image descriptor
+    Value*                      pSamplerDesc,   // [in] Sampler descriptor
+    ArrayRef<Value*>            address,        // Address and other arguments
+    const Twine&                instName,       // [in] Name to give instruction(s)
+    bool                        isSample)       // Is sample rather than gather
+{
+    Value* pResult = nullptr;
+
+    // Extract YCbCr meta data
+    SamplerYCbCrConversionMetaData yCbCrMetaData = {};
+    yCbCrMetaData.word0.u32All = dyn_cast<ConstantInt>(CreateExtractElement(pSamplerDesc, getInt64(4)))->getZExtValue();
+    yCbCrMetaData.word1.u32All = dyn_cast<ConstantInt>(CreateExtractElement(pSamplerDesc, getInt64(5)))->getZExtValue();
+    yCbCrMetaData.word2.u32All = dyn_cast<ConstantInt>(CreateExtractElement(pSamplerDesc, getInt64(6)))->getZExtValue();
+    yCbCrMetaData.word3.u32All = dyn_cast<ConstantInt>(CreateExtractElement(pSamplerDesc, getInt64(7)))->getZExtValue();
+
+    // Only the first 4 DWORDs are sampler descriptor, we need to extract these values under any condition
+    // Init sample descriptor for luma channel
+    Value* pSamplerDescLuma = CreateShuffleVector(pSamplerDesc, pSamplerDesc, { 0, 1, 2, 3 });
+
+    YCbCrSampleInfo sampleInfoLuma = {pResultTy, dim, flags, pImageDesc, pSamplerDescLuma, address, instName.str(), isSample};
+
+    GfxIpVersion& gfxIpVersion = GetPipelineState()->GetTargetInfo().GetGfxIpVersion();
+
+    // Init SamplerYCbCrHelper
+    SamplerYCbCrHelper yCbCrHelper(this, yCbCrMetaData, &sampleInfoLuma, &gfxIpVersion);
+
+    // Prepare the coordinate and derivatives, which might also change the dimension.
+    SmallVector<Value*, 4> coords;
+    SmallVector<Value*, 6> derivatives;
+
+    Value* pProjective = address[ImageAddressIdxProjective];
+    if (pProjective != nullptr)
+    {
+        pProjective = CreateFDiv(ConstantFP::get(pProjective->getType(), 1.0), pProjective);
+    }
+
+    dim = PrepareCoordinate(dim,
+                            pCoord,
+                            pProjective,
+                            address[ImageAddressIdxDerivativeX],
+                            address[ImageAddressIdxDerivativeY],
+                            coords,
+                            derivatives);
+
+    yCbCrHelper.SetCoord(coords[0], coords[1]);
+    yCbCrHelper.SampleYCbCrData();
+    pResult = yCbCrHelper.ConvertColorSpace();
+
+    return static_cast<Instruction*>(pResult);
+}
+
+// =====================================================================================================================
 // Create an image sample.
 // The caller supplies all arguments to the image sample op in "address", in the order specified
 // by the indices defined as ImageIndex* below.
@@ -1468,7 +1530,7 @@ Value* BuilderImplImage::PreprocessIntegerImageGather(
     pDescDword1A = CreateSub(pDescDword1A, getInt32(0x08000000));
     Value* pPatchedImageDesc = CreateInsertElement(pImageDesc, pDescDword1A, 1);
 
-    // On to the "else": patch the coordinates: add (-0.5/width, -0.5/height) to the x,y coordinates.
+    // On to the "else": patch the coordinates: add (-0.5/width, -0.5/height) to the X,Y coordinates.
     SetInsertPoint(pBranch->getSuccessor(1)->getTerminator());
     Value* pZero = getInt32(0);
     dim = (dim == DimCubeArray) ? DimCube : dim;
@@ -2559,4 +2621,3 @@ Value* BuilderImplImage::HandleFragCoordViewIndex(
 
     return pCoord;
 }
-

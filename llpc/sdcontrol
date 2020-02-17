@@ -1,0 +1,36 @@
+######################################################
+#
+# Source Drop Control File (LLPC)
+#
+######################################################
+
+DEPTH = $(shell find_depth)
+
+include $(DEPTH)/make/sddefs
+
+###
+# Remove unneeded source (runs last)
+###
+
+ifeq ($(CS_SANITIZE),1)
+    ifeq ($(CS_CUST_CONFIG),)
+        CS_CUST_CONFIG = openSource
+    endif
+
+    OPENSOURCE = $(DK_ROOT)/codeSanitizer/codeSanitizer.py --config-path codeSanitizerConfig/$(CS_CUST_CONFIG) --in-place -l $(DEPTH)/logfile_llpc.txt --strip-code --license-code --format-whitespace -d --keyword-checker --no-insert-license
+endif
+
+RMFILES =
+DONT_RMFILES =
+
+ifeq ($(SDMAKE_POSTBUILD),1)
+    RMFILES = codeSanitizerConfig \
+              patch/generate/script/sdkeep
+
+endif
+
+######################################################
+
+include $(DEPTH)/make/sdrules
+
+
