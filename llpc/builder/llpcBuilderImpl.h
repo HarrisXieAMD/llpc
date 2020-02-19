@@ -520,7 +520,7 @@ private:
         Value*             pImageDesc;
         Value*             pSamplerDesc;
         ArrayRef<Value*>   address;
-        const Twine&       instName;
+        const std::string& instNameStr;
         bool               isSample;
     };
 

@@ -1439,7 +1439,7 @@ Value* BuilderImplImage::YCbCrCreateImageSampleInternal(
                                    pYCbCrInfo->pImageDesc,
                                    pYCbCrInfo->pSamplerDesc,
                                    pYCbCrInfo->address,
-                                   pYCbCrInfo->instName,
+                                   pYCbCrInfo->instNameStr,
                                    pYCbCrInfo->isSample);
 }
 
@@ -2153,14 +2153,14 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
     coordsLuma.push_back(pT);
 
     // Init sample luma info
-    YCbCrSampleInfo sampleInfoLuma = {pResultTy, dim, flags, pImageDesc, pSamplerDescLuma, address, instName, isSample};
+    YCbCrSampleInfo sampleInfoLuma = {pResultTy, dim, flags, pImageDesc, pSamplerDescLuma, address, instName.str(), isSample};
 
     // Sample Y and A channels
     Value* pImageOpLuma = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsLuma, &sampleInfoLuma));
     pImageOpLuma = CreateShuffleVector(pImageOpLuma, pImageOpLuma, { 1, 3 });
 
     // Init sample chroma info
-    YCbCrSampleInfo sampleInfo = {pResultTy, dim, flags, pImageDesc, pSamplerDescChroma, address, instName, isSample};
+    YCbCrSampleInfo sampleInfo = {pResultTy, dim, flags, pImageDesc, pSamplerDescChroma, address, instName.str(), isSample};
 
     // Init chroma pWidth and pHeight
     Value* pChromaWidth = CreateFMul(pWidth, ConstantFP::get(getFloatTy(), 0.5f));
