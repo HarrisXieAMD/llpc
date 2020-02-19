@@ -485,20 +485,30 @@ private:
         };
 
         ComponentSwizzle() = default;
-        ComponentSwizzle(const Value& swizzle) : value(swizzle), channel(swizzle - Value::R) {};
-        ComponentSwizzle(const uint32_t swizzle) { value = static_cast<Value>(swizzle); channel = (value - Value::R); }
+        ComponentSwizzle(const Value swizzle) : m_value(swizzle), m_channel(swizzle - Value::R) {};
+        ComponentSwizzle(const uint32_t swizzle)
+        {
+            LLPC_ASSERT((swizzle >= Value::Zero) && (swizzle <= Value::A));
+            m_value = static_cast<Value>(swizzle);
+            m_channel = (m_value - Value::R);
+        }
 
-        operator Value() const { return value; }
-        ComponentSwizzle& operator=(uint32_t op) { value = static_cast<Value>(op); return *this; }
-        constexpr uint32_t operator-(ComponentSwizzle::Value op) const { return value - op; }
-        constexpr bool operator!=(ComponentSwizzle::Value op) const { return value != op; }
-        constexpr bool operator==(ComponentSwizzle::Value op) const { return value == op; }
+        operator Value() const { return m_value; }
 
-        const uint32_t GetChannel() const { return channel; }
+        ComponentSwizzle& operator=(uint32_t op)
+        {
+            LLPC_ASSERT((op >= Value::Zero) && (op <= Value::A));
+            m_value = static_cast<Value>(op);
+            return *this;
+        }
+        constexpr bool operator!=(ComponentSwizzle::Value op) const { return m_value != op; }
+        constexpr bool operator==(ComponentSwizzle::Value op) const { return m_value == op; }
+
+        const uint32_t GetChannel() const { return m_channel; }
 
     private:
-        Value value;
-        uint32_t channel;
+        Value m_value;
+        uint32_t m_channel;
     };
 
     // General YCbCr sample info
