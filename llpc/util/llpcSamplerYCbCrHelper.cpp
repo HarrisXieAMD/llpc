@@ -297,6 +297,336 @@ Value* SamplerYCbCrHelper::YCbCrCreateImageSampleInternal(
                                    pYCbCrInfo->isSample);
 }
 
+void SamplerYCbCrHelper::SetYCbCrConversionMetaData(
+    SamplerYCbCrConversionMetaData& yCbCrMetaData)
+{
+    m_pMetaData = &yCbCrMetaData;
+    m_planeNum                   = yCbCrMetaData.word1.planes;
+    m_subsampledX                = yCbCrMetaData.word1.xSubSampled;
+    m_subsampledY                = yCbCrMetaData.word1.ySubSampled;
+    m_forceExplicitReconstruct   = yCbCrMetaData.word0.forceExplicitReconstruct;
+    m_xBitCount                 = yCbCrMetaData.word2.bitCounts.xBitCount;
+    m_swizzleR                  = yCbCrMetaData.word0.componentMapping.swizzleR;
+    m_swizzleG                    = yCbCrMetaData.word0.componentMapping.swizzleG;
+    m_swizzleB                    = yCbCrMetaData.word0.componentMapping.swizzleB;
+    m_swizzleA                    = yCbCrMetaData.word0.componentMapping.swizzleA;
+    m_lumaFilter                     = static_cast<SamplerFilter>(yCbCrMetaData.word1.lumaFilter);
+    m_chromaFilter                   = static_cast<SamplerFilter>(yCbCrMetaData.word1.chromaFilter);
+    m_xChromaOffset                 = static_cast<ChromaLocation>(yCbCrMetaData.word1.xChromaOffset);
+    m_yChromaOffset                 = static_cast<ChromaLocation>(yCbCrMetaData.word1.yChromaOffset);
+    m_yCbCrRange                 = static_cast<SamplerYCbCrRange>(yCbCrMetaData.word0.yCbCrRange);
+    m_yCbCrModel               = static_cast<SamplerYCbCrModelConversion>(yCbCrMetaData.word0.yCbCrModel);
+    m_tileOptimal = yCbCrMetaData.word1.tileOptimal;
+    m_bits[0] = yCbCrMetaData.word0.bitDepth.channelBitsR;
+    m_bits[1] = yCbCrMetaData.word0.bitDepth.channelBitsG;
+    m_bits[2] = yCbCrMetaData.word0.bitDepth.channelBitsB;
+
+    m_pImgDescChromas.resize(3);
+}
+
+void SamplerYCbCrHelper::SetSamplerDescLuma(
+    Value* pSamplerDescLuma)
+{
+    m_pSamplerDescLuma = pSamplerDescLuma;
+}
+
+void SamplerYCbCrHelper::SetSamplerDescChroma(
+    Value* pSamplerDescChroma)
+{
+    m_pSamplerDescChroma = pSamplerDescChroma;
+}
+
+void SamplerYCbCrHelper::SetImageDescLuma(Value* pImgDescLuma)
+{
+    m_pImgDescLuma = pImgDescLuma;
+    m_pImgDescChromas[0] = pImgDescLuma;
+}
+
+void SamplerYCbCrHelper::SetImageDescChroma(ArrayRef<Value*> pImgDescChromas)
+{
+    m_pImgDescChromas = pImgDescChromas;
+}
+
+void SamplerYCbCrHelper::GenSamplerDescChroma()
+{
+    m_pSamplerDescChroma = YCbCrGenerateSamplerDesc(m_pSamplerDescLuma, m_chromaFilter, m_forceExplicitReconstruct);
+}
+
+void SamplerYCbCrHelper::GenImgDescChroma()
+{
+    // Extract SQ_IMG_RSRC_WORD
+    Value* pWord0 = m_pBuilder->CreateExtractElement(m_pImgDescLuma, m_pBuilder->getInt64(0));
+    Value* pWord1 = m_pBuilder->CreateExtractElement(m_pImgDescLuma, m_pBuilder->getInt64(1));
+    Value* pWord2 = m_pBuilder->CreateExtractElement(m_pImgDescLuma, m_pBuilder->getInt64(2));
+    Value* pWord3 = m_pBuilder->CreateExtractElement(m_pImgDescLuma, m_pBuilder->getInt64(3));
+    Value* pWord4 = m_pBuilder->CreateExtractElement(m_pImgDescLuma, m_pBuilder->getInt64(4));
+    Value* pWord5 = m_pBuilder->CreateExtractElement(m_pImgDescLuma, m_pBuilder->getInt64(5));
+    Value* pWord6 = m_pBuilder->CreateExtractElement(m_pImgDescLuma, m_pBuilder->getInt64(6));
+    Value* pWord7 = m_pBuilder->CreateExtractElement(m_pImgDescLuma, m_pBuilder->getInt64(7));
+
+    // Generate pWord1
+    // For 2 plane, the SQ_IMG_RSRC pWord1 uses data which is calculated outside compiler
+    Value* pWord1CbCr = m_pBuilder->getInt32(m_pMetaData->word3.sqImgRsrcWord1);
+
+    // Generate pWord2
+    Value* pWord2BitsWidth  = m_pBuilder->CreateIntrinsic(Intrinsic::amdgcn_ubfe,
+                                              m_pBuilder->getInt32Ty(),
+                                              {pWord2, m_pBuilder->getInt32(0), m_pBuilder->getInt32(14) });
+    Value* pWord2BitsHeight = m_pBuilder->CreateIntrinsic(Intrinsic::amdgcn_ubfe,
+                                              m_pBuilder->getInt32Ty(),
+                                              {pWord2, m_pBuilder->getInt32(14), m_pBuilder->getInt32(14) });
+
+    // Generate Vec2, contains pWidth-1 , pHeight-1
+    Value* pWord2BitsWidthHeightM1 = UndefValue::get(VectorType::get(m_pBuilder->getInt32Ty(), 2));
+    pWord2BitsWidthHeightM1 = m_pBuilder->CreateInsertElement(pWord2BitsWidthHeightM1, pWord2BitsWidth , m_pBuilder->getInt64(0));
+    pWord2BitsWidthHeightM1 = m_pBuilder->CreateInsertElement(pWord2BitsWidthHeightM1, pWord2BitsHeight, m_pBuilder->getInt64(1));
+
+    // pVec2One = [1]
+    //            [1]
+    Value* pVec2One = m_pBuilder->CreateVectorSplat(2, ConstantInt::get(m_pBuilder->getInt32Ty(), 1));
+
+    // pWord2BitsWidthHeight = [pWidth -1]   + [1]
+    //                         [pHeight-1]     [1]
+    Value* pWord2BitsWidthHeight = m_pBuilder->CreateAdd(pWord2BitsWidthHeightM1, pVec2One);
+
+    // pWord2BitsWidthHeightRs1M1 = [pWidth  >> 1] - [1]
+    //                              [pHeight >> 1]   [1]
+    Value* pWord2BitsWidthHeightRs1M1 = m_pBuilder->CreateSub(m_pBuilder->CreateLShr(pWord2BitsWidthHeight, pVec2One), pVec2One);
+
+    // pWord2BitsWidthY = pWidth
+    // pWord2BitsHeightY = pHeight
+    Value* pWord2BitsWidthY     = m_pBuilder->CreateExtractElement(pWord2BitsWidthHeight, m_pBuilder->getInt32(0));
+    Value* pWord2BitsHeightY    = m_pBuilder->CreateExtractElement(pWord2BitsWidthHeight, m_pBuilder->getInt32(1));
+
+    // pWord2BitsWidthCbCr = pWidth >> 1 - 1
+    // pWord2BitsHeightCbCr = pHeight - 1
+    Value* pWord2BitsWidthCbCr  = m_pBuilder->CreateExtractElement(pWord2BitsWidthHeightRs1M1, m_pBuilder->getInt32(0));
+    Value* pWord2BitsHeightCbCr = pWord2BitsHeight;
+
+    // pWord2BitsWidthCb = pWidth >> 1 - 1
+    // pWord2BitsHeightCb = pHeight >> 1 - 1
+    Value* pWord2BitsWidthCb    = m_pBuilder->CreateExtractElement(pWord2BitsWidthHeightRs1M1, m_pBuilder->getInt32(0));
+    Value* pWord2BitsHeightCb   = m_pBuilder->CreateExtractElement(pWord2BitsWidthHeightRs1M1, m_pBuilder->getInt32(1));
+
+    // pWord2BitsWidthCr = pWidth >> 1 - 1
+    // pWord2BitsHeightCr = pHeight >> 1 - 1
+    Value* pWord2BitsWidthCr    = m_pBuilder->CreateExtractElement(pWord2BitsWidthHeightRs1M1, m_pBuilder->getInt32(0));
+    Value* pWord2BitsHeightCr   = m_pBuilder->CreateExtractElement(pWord2BitsWidthHeightRs1M1, m_pBuilder->getInt32(1));
+
+    //                   [pWord2BitsWidthCb]
+    // pWord2WidthVec3 = [pWord2BitsWidthCr]
+    //                   [pWord2BitsWidthCbCr]
+    Value* pWord2WidthVec3 = UndefValue::get(VectorType::get(m_pBuilder->getInt32Ty(), 3));
+    pWord2WidthVec3 = m_pBuilder->CreateInsertElement(pWord2WidthVec3, pWord2BitsWidthCb  , m_pBuilder->getInt64(0));
+    pWord2WidthVec3 = m_pBuilder->CreateInsertElement(pWord2WidthVec3, pWord2BitsWidthCr  , m_pBuilder->getInt64(1));
+    pWord2WidthVec3 = m_pBuilder->CreateInsertElement(pWord2WidthVec3, pWord2BitsWidthCbCr, m_pBuilder->getInt64(2));
+
+    //                    [pWord2BitsHeightCb]
+    // pWord2HeightVec3 = [pWord2BitsHeightCr]
+    //                    [pWord2BitsHeightCbCr]
+    Value* pWord2HeightVec3 = UndefValue::get(VectorType::get(m_pBuilder->getInt32Ty(), 3));
+    pWord2HeightVec3 = m_pBuilder->CreateInsertElement(pWord2HeightVec3, pWord2BitsHeightCb  , m_pBuilder->getInt64(0));
+    pWord2HeightVec3 = m_pBuilder->CreateInsertElement(pWord2HeightVec3, pWord2BitsHeightCr  , m_pBuilder->getInt64(1));
+    pWord2HeightVec3 = m_pBuilder->CreateInsertElement(pWord2HeightVec3, pWord2BitsHeightCbCr, m_pBuilder->getInt64(2));
+
+    // Replace [0:14) m_bits of pWord2 with pWord2WidthVec3
+    Value* pWord2Vec3 = ReplaceBitsInWord(pWord2, 0, 14, pWord2WidthVec3);
+    // Replace [14:28) m_bits of pWord2Vec3 with pWord2HeightVec3
+    pWord2Vec3 = ReplaceBitsInWord(pWord2Vec3, 14, 14, pWord2HeightVec3);
+
+    Value* pWord2Cb   = m_pBuilder->CreateExtractElement(pWord2Vec3, m_pBuilder->getInt32(0));
+    Value* pWord2Cr   = m_pBuilder->CreateExtractElement(pWord2Vec3, m_pBuilder->getInt32(1));
+    Value* pWord2CbCr = m_pBuilder->CreateExtractElement(pWord2Vec3, m_pBuilder->getInt32(2));
+
+    // Generate pWord3
+
+    //                        [     0x300]
+    // pWord3DstSelXYZWVec3 = [     0x204]
+    //                        [dstSelXYZW]
+    Value* pWord3DstSelXYZWVec3 = UndefValue::get(VectorType::get(m_pBuilder->getInt32Ty(), 3));
+    pWord3DstSelXYZWVec3 = m_pBuilder->CreateInsertElement(pWord3DstSelXYZWVec3, m_pBuilder->getInt32(0x300), m_pBuilder->getInt64(0));
+    pWord3DstSelXYZWVec3 = m_pBuilder->CreateInsertElement(pWord3DstSelXYZWVec3, m_pBuilder->getInt32(0x204), m_pBuilder->getInt64(1));
+    pWord3DstSelXYZWVec3 = m_pBuilder->CreateInsertElement(pWord3DstSelXYZWVec3,
+                                              m_pBuilder->getInt32(m_pMetaData->word1.dstSelXYZW),
+                                              m_pBuilder->getInt64(2));
+
+    // Replace [0:12) m_bits of pWord3 with pWord3DstSelXYZWVec3
+    Value* pWord3Vec3 = ReplaceBitsInWord(pWord3, 0, 12, pWord3DstSelXYZWVec3);
+
+    Value* pWord3Cb   = m_pBuilder->CreateExtractElement(pWord3Vec3, m_pBuilder->getInt32(0));
+    Value* pWord3Cr   = m_pBuilder->CreateExtractElement(pWord3Vec3, m_pBuilder->getInt32(1));
+    Value* pWord3CbCr = m_pBuilder->CreateExtractElement(pWord3Vec3, m_pBuilder->getInt32(2));
+
+    // Generate pWord4
+    Value* pWord4BitsDepth = m_pBuilder->CreateIntrinsic(Intrinsic::amdgcn_ubfe,
+                                             m_pBuilder->getInt32Ty(),
+                                             {pWord4, m_pBuilder->getInt32(0), m_pBuilder->getInt32(13) });
+    Value* pWord4BitsPitchYM1 = m_pBuilder->CreateIntrinsic(Intrinsic::amdgcn_ubfe,
+                                             m_pBuilder->getInt32Ty(),
+                                             {pWord4, m_pBuilder->getInt32(13), m_pBuilder->getInt32(12) });
+    Value* pWord4BitsPitchY  = m_pBuilder->CreateAdd(pWord4BitsPitchYM1, m_pBuilder->getInt32(1));
+    Value* pWord4BitsPitchCb = m_pBuilder->CreateSub(m_pBuilder->CreateLShr(pWord4BitsPitchY, m_pBuilder->getInt32(1)), m_pBuilder->getInt32(1));
+
+    Value* pWord4Vec3 = pWord4BitsDepth;
+
+    // Replace [13:29) m_bits of pWord4Vec3 with pWord4BitsPitchCb
+    pWord4Vec3 = ReplaceBitsInWord(pWord4Vec3, 13, 16, pWord4BitsPitchCb);
+
+    //                  [4]
+    // pWord4LastBits = [5]
+    //                  [6]
+    Value* pWord4LastBits = UndefValue::get(VectorType::get(m_pBuilder->getInt32Ty(), 3));
+    pWord4LastBits = m_pBuilder->CreateInsertElement(pWord4LastBits, m_pBuilder->getInt32(4), m_pBuilder->getInt64(0));
+    pWord4LastBits = m_pBuilder->CreateInsertElement(pWord4LastBits, m_pBuilder->getInt32(5), m_pBuilder->getInt64(1));
+    pWord4LastBits = m_pBuilder->CreateInsertElement(pWord4LastBits, m_pBuilder->getInt32(6), m_pBuilder->getInt64(2));
+
+    // Replace [29:32) m_bits of pWord4Vec3 with pWord4LastBits
+    pWord4Vec3 = ReplaceBitsInWord(pWord4Vec3, 29, 3, pWord4LastBits);
+    Value* pWord4Cb   = m_pBuilder->CreateExtractElement(pWord4Vec3, m_pBuilder->getInt32(0));
+    Value* pWord4Cr   = m_pBuilder->CreateExtractElement(pWord4Vec3, m_pBuilder->getInt32(1));
+    Value* pWord4CbCr = m_pBuilder->CreateExtractElement(pWord4Vec3, m_pBuilder->getInt32(2));
+
+    // If the image could be tile optimal, then we need to check whehter it is tiling
+    // optimal by reading from srd data dynmically
+    Value* pIsTileOpt = nullptr;
+    Value* pWord4BitsPitchYOpt = nullptr;
+    if (m_tileOptimal)
+    {
+        pIsTileOpt = m_pBuilder->CreateICmpNE(m_pBuilder->CreateIntrinsic(Intrinsic::amdgcn_ubfe,
+                                                  m_pBuilder->getInt32Ty(),
+                                                  {pWord3, m_pBuilder->getInt32(20), m_pBuilder->getInt32(5) }),
+                                  m_pBuilder->getInt32(0));
+        pWord4BitsPitchYOpt = m_pBuilder->CreateMul(pWord4BitsPitchY, m_pBuilder->CreateLShr(m_pBuilder->getInt32(m_bits[0]), 3));
+    }
+
+    // pWord4BitsPitchY * (m_xBitCount >> 3)
+    pWord4BitsPitchY = m_pBuilder->CreateMul(pWord4BitsPitchY, m_pBuilder->CreateLShr(m_pBuilder->getInt32(m_xBitCount), 3));
+
+    if (m_tileOptimal)
+    {
+        // pWord4BitsPitchY = pIsTileOpt ? (pWord4BitsPitchYOpt << 5) : pWord4BitsPitchY
+        pWord4BitsPitchY = m_pBuilder->CreateSelect(pIsTileOpt,
+                                       m_pBuilder->CreateShl(pWord4BitsPitchYOpt, m_pBuilder->getInt32(5)),
+                                       pWord4BitsPitchY);
+    }
+
+    // we should turn this size to 256bytes and add to the word0_bits_BASE_ADDRESS
+    // pWord0Cb = pWord0 + (pWord4BitsPitchY * pWord2BitsHeightY) >> 8
+    Value* pWord0Cb = m_pBuilder->CreateAdd(pWord0, m_pBuilder->CreateLShr(m_pBuilder->CreateMul(pWord4BitsPitchY, pWord2BitsHeightY), m_pBuilder->getInt32(8)));
+
+    pWord4BitsPitchCb = m_pBuilder->CreateAdd(pWord4BitsPitchCb, m_pBuilder->getInt32(1));
+
+    Value* pWord4BitsPitchCbOpt = nullptr;
+    // pWord4BitsPitchCb = pWord4BitsPitchCb * (m_xBitCount >> 3)
+    pWord4BitsPitchCb = m_pBuilder->CreateMul(pWord4BitsPitchCb, m_pBuilder->CreateLShr(m_pBuilder->getInt32(m_xBitCount), 3));
+
+    if (m_tileOptimal)
+    {
+        // pWord4BitsPitchCbOpt = pWord4BitsPitchCb * (m_bits[0] >> 3)
+        pWord4BitsPitchCbOpt = m_pBuilder->CreateMul(pWord4BitsPitchCb, m_pBuilder->CreateLShr(m_pBuilder->getInt32(m_bits[0]), 3));
+
+        // pWord4BitsPitchCb = pIsTileOpt ? (pWord4BitsPitchCbOpt << 5) : pWord4BitsPitchCb
+        pWord4BitsPitchCb = m_pBuilder->CreateSelect(pIsTileOpt,
+                                        m_pBuilder->CreateShl(pWord4BitsPitchCbOpt, m_pBuilder->getInt32(5)),
+                                        pWord4BitsPitchCb);
+    }
+
+    pWord2BitsHeightCb = m_pBuilder->CreateAdd(pWord2BitsHeightCb, m_pBuilder->getInt32(1));
+
+    // we should turn this size to 256bytes and add to the BASE_ADDRESS
+    // pWord0Cr = pWord0Cb + (pWord4BitsPitchCb * pWord2BitsHeightCb) >> 8
+    Value* pWord0Cr = m_pBuilder->CreateAdd(pWord0Cb,
+                               m_pBuilder->CreateLShr(m_pBuilder->CreateMul(pWord4BitsPitchCb, pWord2BitsHeightCb), m_pBuilder->getInt32(8)));
+
+    Value* pImageDesc1 = nullptr;
+    Value* pImageDesc2 = nullptr;
+
+    // We now have all the words for Cb && Cr ready, then create new ImageDesc for Cb && Cr
+    if (m_planeNum == 1)
+    {
+        pImageDesc1 = UndefValue::get(m_pImgDescLuma->getType());
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord0,      m_pBuilder->getInt64(0));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord1CbCr, m_pBuilder->getInt64(1));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord2CbCr, m_pBuilder->getInt64(2));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord3CbCr, m_pBuilder->getInt64(3));
+        pWord4BitsPitchCb = m_pBuilder->CreateSub(pWord4BitsPitchCb, m_pBuilder->getInt32(1));
+        Value* pWord4CbCr = ReplaceBitsInWord(pWord4, 13, 16, pWord4BitsPitchCb);
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord4CbCr, m_pBuilder->getInt64(4));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord5,      m_pBuilder->getInt64(5));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord6,      m_pBuilder->getInt64(6));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord7,      m_pBuilder->getInt64(7));
+        m_pImgDescChromas[1] = pImageDesc1;
+    }
+    else if (m_planeNum == 2)
+    {
+        pImageDesc1 = UndefValue::get(m_pImgDescLuma->getType());
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord0Cb,   m_pBuilder->getInt64(0));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord1CbCr, m_pBuilder->getInt64(1));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord2Cb,   m_pBuilder->getInt64(2));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord3CbCr, m_pBuilder->getInt64(3));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord4CbCr, m_pBuilder->getInt64(4));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord5,      m_pBuilder->getInt64(5));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord6,      m_pBuilder->getInt64(6));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord7,      m_pBuilder->getInt64(7));
+        m_pImgDescChromas[1] = pImageDesc1;
+    }
+    else if (m_planeNum == 3)
+    {
+        pImageDesc1 = UndefValue::get(m_pImgDescLuma->getType());
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord0Cb,  m_pBuilder->getInt64(0));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord1,    m_pBuilder->getInt64(1));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord2Cb,  m_pBuilder->getInt64(2));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord3Cb,  m_pBuilder->getInt64(3));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord4Cb,  m_pBuilder->getInt64(4));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord5,    m_pBuilder->getInt64(5));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord6,    m_pBuilder->getInt64(6));
+        pImageDesc1 = m_pBuilder->CreateInsertElement(pImageDesc1, pWord7,    m_pBuilder->getInt64(7));
+        m_pImgDescChromas[1] = pImageDesc1;
+
+        pImageDesc2 = UndefValue::get(m_pImgDescLuma->getType());
+        pImageDesc2 = m_pBuilder->CreateInsertElement(pImageDesc2, pWord0Cr,  m_pBuilder->getInt64(0));
+        pImageDesc2 = m_pBuilder->CreateInsertElement(pImageDesc2, pWord1,    m_pBuilder->getInt64(1));
+        pImageDesc2 = m_pBuilder->CreateInsertElement(pImageDesc2, pWord2Cr,  m_pBuilder->getInt64(2));
+        pImageDesc2 = m_pBuilder->CreateInsertElement(pImageDesc2, pWord3Cr,  m_pBuilder->getInt64(3));
+        pImageDesc2 = m_pBuilder->CreateInsertElement(pImageDesc2, pWord4Cr,  m_pBuilder->getInt64(4));
+        pImageDesc2 = m_pBuilder->CreateInsertElement(pImageDesc2, pWord5,    m_pBuilder->getInt64(5));
+        pImageDesc2 = m_pBuilder->CreateInsertElement(pImageDesc2, pWord6,    m_pBuilder->getInt64(6));
+        pImageDesc2 = m_pBuilder->CreateInsertElement(pImageDesc2, pWord7,    m_pBuilder->getInt64(7));
+        m_pImgDescChromas[2] = pImageDesc2;
+    }
+    else
+    {
+        LLPC_NEVER_CALLED();
+    }
+
+    // transfer from int to float
+    m_pWidth  = m_pBuilder->CreateUIToFP(pWord2BitsWidthY,  m_pBuilder->getFloatTy());
+    m_pHeight = m_pBuilder->CreateUIToFP(pWord2BitsHeightY, m_pBuilder->getFloatTy());
+}
+
+Value* SamplerYCbCrHelper::ConvertColorSpace()
+{
+    m_pRGBAData = YCbCrConvertColor(m_pResultType,
+                                        m_yCbCrModel,
+                                        m_yCbCrRange,
+                                        m_bits,
+                                        m_pYCbCrData);
+    return m_pRGBAData;
+}
+
+void SamplerYCbCrHelper::SetCoord(
+    Value* pS,
+    Value* pT)
+{
+    m_pS = pS;
+    m_pT = pT;
+
+    m_pU = TransferSTtoUVCoords(m_pS, m_pWidth);
+    m_pV = TransferSTtoUVCoords(m_pT, m_pHeight);
+    m_pI = TransferUVtoIJCoords(m_lumaFilter, m_pU);
+    m_pJ = TransferUVtoIJCoords(m_lumaFilter, m_pV);
+}
+
 // =====================================================================================================================
 // Replace [beginBit, beginBit + adjustBits) bits with data in specific word
 Value* SamplerYCbCrHelper::ReplaceBitsInWord(
@@ -310,6 +640,7 @@ Value* SamplerYCbCrHelper::ReplaceBitsInWord(
     Value* pMask = m_pBuilder->getInt32(mask);
     Value* pInvMask = m_pBuilder->getInt32(~mask);
     Value* pBeginBit = m_pBuilder->getInt32(beginBit);
+
 
     if (auto pWordVecTy = dyn_cast<VectorType>(pWord->getType()))
     {
@@ -450,6 +781,223 @@ Value* SamplerYCbCrHelper::YCbCrRangeExpand(
         LLPC_NEVER_CALLED();
         return nullptr;
     }
+}
+
+void Llpc::SamplerYCbCrHelper::SampleYCbCrData(YCbCrSampleInfo& yCbCrSampleInfo)
+{
+    SmallVector<Value*, 4> coordsLuma;
+    SmallVector<Value*, 4> coordsChroma;
+
+    // pI -> pS
+    coordsLuma.push_back(m_pS);
+    // pJ -> pT
+    coordsLuma.push_back(m_pT);
+
+    // Init sample luma info
+    //YCbCrSampleInfo sampleInfoLuma = {m_pResultType, dim, flags, pImageDesc, pSamplerDescLuma, address, instName.str(), isSample};
+    m_pResultType = yCbCrSampleInfo.pResultTy;
+    // Sample Y and A channels
+    Value* pImageOpLuma = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsLuma, &yCbCrSampleInfo));
+    pImageOpLuma = m_pBuilder->CreateShuffleVector(pImageOpLuma, pImageOpLuma, { 1, 3 });
+
+    // Init sample chroma info
+    //YCbCrSampleInfo sampleInfo = {pResultTy, dim, flags, pImageDesc, pSamplerDescChroma, address, instName.str(), isSample};
+    YCbCrSampleInfo sampleInfo = yCbCrSampleInfo;
+    sampleInfo.pSamplerDesc = m_pSamplerDescChroma;
+
+    // Init chroma pWidth and pHeight
+    Value* pChromaWidth = m_pBuilder->CreateFMul(m_pWidth, ConstantFP::get(m_pBuilder->getFloatTy(), 0.5f));
+    Value* pChromaHeight = m_pBuilder->CreateFMul(m_pHeight, ConstantFP::get(m_pBuilder->getFloatTy(), 0.5f));
+
+    // Init smaple chroma info for downsampled chroma channels in the x dimension
+    XChromaSampleInfo xChromaInfo = {};
+    xChromaInfo.pYCbCrInfo = &sampleInfo;
+    xChromaInfo.pImageDesc1 = m_pImgDescChromas[1];
+    xChromaInfo.pI = m_pI;
+    xChromaInfo.pJ = m_pJ;
+    xChromaInfo.pChromaWidth = pChromaWidth;
+    xChromaInfo.pChromaHeight = m_pHeight;
+    xChromaInfo.xChromaOffset = m_xChromaOffset;
+
+    // Init smaple chroma info for downsampled chroma channels in xy dimension
+    XYChromaSampleInfo xyChromaInfo = {};
+    xyChromaInfo.pYCbCrInfo = &sampleInfo;
+    xyChromaInfo.pImageDesc1 = m_pImgDescChromas[1];
+    xyChromaInfo.pImageDesc2 = m_pImgDescChromas[2];
+    xyChromaInfo.pI = m_pI;
+    xyChromaInfo.pJ = m_pJ;
+    xyChromaInfo.pChromaWidth = pChromaWidth;
+    xyChromaInfo.pChromaHeight = pChromaHeight;
+    xyChromaInfo.planeNum = m_planeNum;
+    xyChromaInfo.xChromaOffset = m_xChromaOffset;
+    xyChromaInfo.yChromaOffset = m_yChromaOffset;
+
+    // Init wrapped smaple chroma info
+    YCbCrWrappedSampleInfo wrappedSampleInfo = {};
+    wrappedSampleInfo.pYCbCrInfo = &sampleInfo;
+    wrappedSampleInfo.pChromaWidth = m_pWidth;
+    wrappedSampleInfo.pChromaHeight = m_pHeight;
+    wrappedSampleInfo.pI = m_pU;
+    wrappedSampleInfo.pJ = m_pV;
+    wrappedSampleInfo.pImageDesc1 = m_pImgDescChromas[0];
+    wrappedSampleInfo.pImageDesc2 = m_pImgDescChromas[1];
+    wrappedSampleInfo.pImageDesc3 = m_pImgDescChromas[2];
+    wrappedSampleInfo.planeNum = m_planeNum;
+    wrappedSampleInfo.subsampledX = m_subsampledX;
+    wrappedSampleInfo.subsampledY = m_subsampledY;
+
+    Value* pImageOpChroma = nullptr;
+
+    if (m_lumaFilter == SamplerFilter::Nearest)
+    {
+        if (m_forceExplicitReconstruct || !(m_subsampledX || m_subsampledY))
+        {
+            if ((m_chromaFilter == SamplerFilter::Nearest) || !m_subsampledX)
+            {
+                // Reconstruct using nearest if needed, otherwise, just take what's already there.
+                wrappedSampleInfo.subsampledX = false;
+                wrappedSampleInfo.subsampledY = false;
+
+                pImageOpChroma = YCbCrWrappedSample(wrappedSampleInfo);
+            }
+            else // SamplerFilter::Linear
+            {
+                if (m_subsampledY)
+                {
+                    pImageOpChroma = YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
+                }
+                else
+                {
+                    pImageOpChroma = YCbCrReconstructLinearXChromaSample(xChromaInfo);
+                }
+            }
+        }
+        else
+        {
+            if (m_subsampledX)
+            {
+                wrappedSampleInfo.pI = YCbCrCalculateImplicitChromaUV(m_xChromaOffset, m_pU);
+            }
+
+            if (m_subsampledY)
+            {
+                wrappedSampleInfo.pJ = YCbCrCalculateImplicitChromaUV(m_yChromaOffset, m_pV);
+            }
+
+            pImageOpChroma = YCbCrWrappedSample(wrappedSampleInfo);
+        }
+    }
+    else //lumaFilter == SamplerFilter::Linear
+    {
+        if (m_forceExplicitReconstruct || !(m_subsampledX || m_subsampledY))
+        {
+            Value* pLumaA = CalculateUVoffset(m_pU);
+            Value* pLumaB = CalculateUVoffset(m_pV);
+            Value* pSubIPlusOne = m_pBuilder->CreateFAdd(m_pI, ConstantFP::get(m_pBuilder->getFloatTy(), 1.0f));
+            Value* pSubJPlusOne = m_pBuilder->CreateFAdd(m_pJ, ConstantFP::get(m_pBuilder->getFloatTy(), 1.0f));
+
+            if ((m_chromaFilter == SamplerFilter::Nearest) || !m_subsampledX)
+            {
+                if (!m_subsampledX)
+                {
+                    wrappedSampleInfo.subsampledX = false;
+                    wrappedSampleInfo.subsampledY = false;
+                    pImageOpChroma = YCbCrWrappedSample(wrappedSampleInfo);
+                }
+                else
+                {
+                    Value* pSubI = m_pI;
+                    Value* pSubJ = m_pJ;
+                    if (m_subsampledX)
+                    {
+                        pSubI = m_pBuilder->CreateFDiv(m_pI, ConstantFP::get(m_pBuilder->getFloatTy(), 2.0));
+                        pSubIPlusOne = m_pBuilder->CreateFDiv(pSubIPlusOne, ConstantFP::get(m_pBuilder->getFloatTy(), 2.0));
+                    }
+
+                    if (m_subsampledY)
+                    {
+                        pSubJ = m_pBuilder->CreateFDiv(m_pJ, ConstantFP::get(m_pBuilder->getFloatTy(), 2.0));
+                        pSubJPlusOne = m_pBuilder->CreateFDiv(pSubJPlusOne, ConstantFP::get(m_pBuilder->getFloatTy(), 2.0));
+                    }
+
+                    wrappedSampleInfo.pI = pSubI;
+                    wrappedSampleInfo.pJ = pSubJ;
+                    Value* pTL = YCbCrWrappedSample(wrappedSampleInfo);
+
+                    wrappedSampleInfo.pI = pSubIPlusOne;
+                    Value* pTR = YCbCrWrappedSample(wrappedSampleInfo);
+
+                    wrappedSampleInfo.pJ = pSubJPlusOne;
+                    Value* pBR = YCbCrWrappedSample(wrappedSampleInfo);
+
+                    wrappedSampleInfo.pI = pSubI;
+                    Value* pBL = YCbCrWrappedSample(wrappedSampleInfo);
+
+                    pImageOpChroma = BilinearBlend(pLumaA, pLumaB, pTL, pTR, pBL, pBR);
+                }
+            }
+            else // vk::VK_FILTER_LINEAR
+            {
+                if (m_subsampledY)
+                {
+                    // Linear, Reconstructed xy chroma samples with explicit linear filtering
+                    Value* pTL = YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
+
+                    xyChromaInfo.pI = pSubIPlusOne;
+                    Value* pTR = YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
+
+                    xyChromaInfo.pJ = pSubJPlusOne;
+                    Value* pBR = YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
+
+                    xyChromaInfo.pI = m_pI;
+                    Value* pBL = YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
+
+                    pImageOpChroma = BilinearBlend(pLumaA, pLumaB, pTL, pTR, pBL, pBR);
+                }
+                else
+                {
+                    // Linear, Reconstructed X chroma samples with explicit linear filtering
+                    Value* pTL = YCbCrReconstructLinearXChromaSample(xChromaInfo);
+
+                    xChromaInfo.pI = pSubIPlusOne;
+                    Value* pTR = YCbCrReconstructLinearXChromaSample(xChromaInfo);
+
+                    xChromaInfo.pJ = pSubJPlusOne;
+                    Value* pBR = YCbCrReconstructLinearXChromaSample(xChromaInfo);
+
+                    xChromaInfo.pI = m_pI;
+                    Value* pBL = YCbCrReconstructLinearXChromaSample(xChromaInfo);
+
+                    pImageOpChroma = BilinearBlend(pLumaA, pLumaB, pTL, pTR, pBL, pBR);
+                }
+            }
+        }
+        else
+        {
+            if (m_subsampledX)
+            {
+                wrappedSampleInfo.pI = YCbCrCalculateImplicitChromaUV(m_xChromaOffset, m_pU);
+            }
+
+            if (m_subsampledY)
+            {
+                wrappedSampleInfo.pJ = YCbCrCalculateImplicitChromaUV(m_yChromaOffset, m_pV);
+            }
+
+            pImageOpChroma = YCbCrWrappedSample(wrappedSampleInfo);
+        }
+    }
+
+    // Adjust channel sequence to R,G,B,A
+    m_pYCbCrData = m_pBuilder->CreateShuffleVector(pImageOpLuma, pImageOpChroma, { 2, 0, 3, 1});
+
+    // Shuffle channels if necessary
+    m_pYCbCrData = m_pBuilder->CreateShuffleVector(m_pYCbCrData,
+                                                   m_pYCbCrData,
+                                                   { m_swizzleR.GetChannel(),
+                                                     m_swizzleG.GetChannel(),
+                                                     m_swizzleB.GetChannel(),
+                                                     m_swizzleA.GetChannel() });
 }
 
 // =====================================================================================================================

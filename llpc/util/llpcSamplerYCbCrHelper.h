@@ -98,6 +98,7 @@ public:
     {
         LLPC_ASSERT((op >= Value::Zero) && (op <= Value::A));
         m_value = static_cast<Value>(op);
+        m_channel = (m_value - Value::R);
         return *this;
     }
     constexpr bool operator!=(ComponentSwizzle::Value op) const { return m_value != op; }
@@ -164,6 +165,29 @@ public:
 
     SamplerYCbCrHelper() = default;
 
+    void SetYCbCrConversionMetaData(SamplerYCbCrConversionMetaData& yCbCrMetaData);
+
+    void SetSamplerDescLuma(Value*  pSamplerDescLuma);
+    
+    void SetSamplerDescChroma(Value* pSamplerDescChroma);
+
+    void SetImageDescLuma(Value*  pImgDescLuma);
+
+    void SetImageDescChroma(ArrayRef<Value*> pImgDescChromas);
+    
+    void GenSamplerDescChroma();
+
+    void GenImgDescChroma();
+    
+    Value* ConvertColorSpace();
+
+    void SampleYCbCrData(YCbCrSampleInfo& yCbCrSampleInfo);
+
+    void SetCoord(Value* pS,
+                  Value* pT);
+
+    inline void SetSampleInfoLuma(Type* pResultType) { m_pResultType = pResultType; }
+
     // Replace [beginBit, beginBit + adjustBits) bits with pData in specific pWord
     Value* ReplaceBitsInWord(Value*   pWord,
                              uint32_t beginBit,
@@ -225,8 +249,46 @@ public:
                              Value*                      pImageOp);
 
 private:
-    BuilderImplImage* m_pBuilder;
+    SamplerYCbCrConversionMetaData* m_pMetaData;
+    BuilderImplImage*           m_pBuilder                ;
+    int                         m_planeNum                ;
+    bool                        m_subsampledX             ;
+    bool                        m_subsampledY             ;
+    bool                        m_forceExplicitReconstruct;
+    bool                        m_tileOptimal;
+    uint32_t                    m_xBitCount               ;
+    ComponentSwizzle            m_swizzleR                ;
+    ComponentSwizzle            m_swizzleG                ;
+    ComponentSwizzle            m_swizzleB                ;
+    ComponentSwizzle            m_swizzleA                ;
+    SamplerFilter               m_lumaFilter              ;
+    SamplerFilter               m_chromaFilter            ;
+    ChromaLocation              m_xChromaOffset           ;
+    ChromaLocation              m_yChromaOffset           ;
+    SamplerYCbCrRange           m_yCbCrRange              ;
+    SamplerYCbCrModelConversion m_yCbCrModel              ;
+    uint32_t m_bits[3];
 
+    Value* m_pWidth;
+    Value* m_pHeight;
+
+    Value* m_pS;
+    Value* m_pT;
+
+    Value* m_pU;
+    Value* m_pV;
+    Value* m_pI;
+    Value* m_pJ;
+
+    Value* m_pSamplerDescLuma;
+    Value* m_pImgDescLuma;
+    Value* m_pSamplerDescChroma;
+    std::vector<Value*> m_pImgDescChromas;
+
+    Value* m_pYCbCrData;
+    Value* m_pRGBAData;
+
+    Type* m_pResultType;
 };
 
 } // Llpc
