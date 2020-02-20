@@ -31,9 +31,82 @@
 
 #pragma once
 #include "llpc.h"
+#include "llpcDebug.h"
 
 namespace Llpc
 {
+// Represents the type of sampler filter.
+enum class SamplerFilter
+{
+    Nearest = 0,
+    Linear,
+};
+
+// Represents the YCbCr conversion model.
+enum class SamplerYCbCrModelConversion : uint32_t
+{
+    RgbIdentity = 0,
+    YCbCrIdentity,
+    YCbCr709,
+    YCbCr601,
+    YCbCr2020,
+};
+
+// Represents whether color channels are encoded using the full range of numerical
+// values or whether values are reserved for headroom and foot room.
+enum class SamplerYCbCrRange
+{
+    ItuFull = 0,
+    ItuNarrow,
+};
+
+// Represents the location of downsampled chroma channel samples relative to the luma samples.
+enum class ChromaLocation
+{
+    CositedEven = 0,
+    Midpoint,
+};
+
+// Represents the component values placed in each component of the output vector.
+class ComponentSwizzle
+{
+public:
+    enum Value: uint32_t
+    {
+        Zero = 0,
+        One  = 1,
+        R    = 4,
+        G    = 5,
+        B    = 6,
+        A    = 7,
+    };
+
+    ComponentSwizzle() = default;
+    ComponentSwizzle(const Value swizzle) : m_value(swizzle), m_channel(swizzle - Value::R) {};
+    ComponentSwizzle(const uint32_t swizzle)
+    {
+        LLPC_ASSERT((swizzle >= Value::Zero) && (swizzle <= Value::A));
+        m_value = static_cast<Value>(swizzle);
+        m_channel = (m_value - Value::R);
+    }
+
+    operator Value() const { return m_value; }
+
+    ComponentSwizzle& operator=(uint32_t op)
+    {
+        LLPC_ASSERT((op >= Value::Zero) && (op <= Value::A));
+        m_value = static_cast<Value>(op);
+        return *this;
+    }
+    constexpr bool operator!=(ComponentSwizzle::Value op) const { return m_value != op; }
+    constexpr bool operator==(ComponentSwizzle::Value op) const { return m_value == op; }
+
+    const uint32_t GetChannel() const { return m_channel; }
+
+private:
+    Value m_value;
+    uint32_t m_channel;
+};
 
 // =====================================================================================================================
 // Represents LLPC sampler yCbCr conversion helper class

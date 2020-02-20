@@ -29,7 +29,7 @@
 ***********************************************************************************************************************
 */
 #include "llpcSamplerYCbCrHelper.h"
-#include "llpcDebug.h"
+
 #include "llpcUtil.h"
 
 using namespace llvm;
