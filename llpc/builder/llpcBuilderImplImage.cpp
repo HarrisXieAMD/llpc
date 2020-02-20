@@ -35,6 +35,8 @@
 #include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/IntrinsicsAMDGPU.h"
 
+#include "llpcSamplerYCbCrHelper.h"
+
 #define DEBUG_TYPE "llpc-builder-impl-image"
 
 using namespace Llpc;
@@ -1186,640 +1188,6 @@ Value* BuilderImplImage::CreateImageStore(
 }
 
 // =====================================================================================================================
-// Implement wrapped YCbCr sample
-Value* BuilderImplImage::YCbCrWrappedSample(
-    YCbCrWrappedSampleInfo& wrapInfo) // [In] Wrapped YCbCr sample infomation
-{
-    SmallVector<Value*, 4> coordsChroma;
-    YCbCrSampleInfo* pSampleInfo = wrapInfo.pYCbCrInfo;
-    Value* pChromaWidth  = wrapInfo.pChromaWidth;
-    Value* pChromaHeight = wrapInfo.pChromaHeight;
-
-    if (wrapInfo.subsampledX)
-    {
-        pChromaWidth = CreateFMul(wrapInfo.pChromaWidth, ConstantFP::get(getFloatTy(), 0.5f));
-    }
-
-    if (wrapInfo.subsampledY)
-    {
-        pChromaHeight = CreateFMul(wrapInfo.pChromaHeight, ConstantFP::get(getFloatTy(), 0.5f));
-    }
-
-    coordsChroma.push_back(CreateFDiv(wrapInfo.pI, pChromaWidth));
-    coordsChroma.push_back(CreateFDiv(wrapInfo.pJ, pChromaHeight));
-
-    pSampleInfo->pImageDesc = wrapInfo.pImageDesc1;
-
-    Value* pResult = nullptr;
-
-    if (wrapInfo.planeNum == 1)
-    {
-        pSampleInfo->pImageDesc = wrapInfo.subsampledX ? wrapInfo.pImageDesc2 : wrapInfo.pImageDesc1;
-
-        Instruction* pImageOp = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChroma, pSampleInfo));
-        pResult = CreateShuffleVector(pImageOp, pImageOp, { 0, 2 });
-    }
-    else if (wrapInfo.planeNum == 2)
-    {
-        pSampleInfo->pImageDesc = wrapInfo.pImageDesc2;
-        Instruction* pImageOp = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChroma, pSampleInfo));
-        pResult = CreateShuffleVector(pImageOp, pImageOp, { 0, 2 });
-    }
-    else if (wrapInfo.planeNum == 3)
-    {
-        pSampleInfo->pImageDesc = wrapInfo.pImageDesc2;
-        Instruction* pImageOp1 = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChroma, pSampleInfo));
-
-        pSampleInfo->pImageDesc = wrapInfo.pImageDesc3;
-        Instruction* pImageOp2 = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChroma, pSampleInfo));
-        pResult = CreateShuffleVector(pImageOp2, pImageOp1, { 0, 6 });
-    }
-    else
-    {
-        LLPC_NEVER_CALLED();
-    }
-
-    return pResult;
-}
-
-// =====================================================================================================================
-// Create YCbCr Reconstruct linear X chroma sample
-Value* BuilderImplImage::YCbCrReconstructLinearXChromaSample(
-    XChromaSampleInfo& xChromaInfo) // [In] Infomation for downsampled chroma channels in X dimension
-{
-    YCbCrSampleInfo* pSampleInfo = xChromaInfo.pYCbCrInfo;
-    Value* pIsEvenI = CreateICmpEQ(CreateSMod(CreateFPToSI(xChromaInfo.pI, getInt32Ty()), getInt32(2)), getInt32(0));
-
-    Value* pSubI = CreateUnaryIntrinsic(Intrinsic::floor,
-                                        CreateFDiv(xChromaInfo.pI, ConstantFP::get(getFloatTy(), 2.0)));
-    if (xChromaInfo.xChromaOffset != ChromaLocation::CositedEven)
-    {
-        pSubI = CreateSelect(pIsEvenI,
-                            CreateFSub(pSubI, ConstantFP::get(getFloatTy(), 1.0)),
-                            pSubI);
-    }
-
-    Value* pAlpha = nullptr;
-    if (xChromaInfo.xChromaOffset == ChromaLocation::CositedEven)
-    {
-        pAlpha = CreateSelect(pIsEvenI, ConstantFP::get(getFloatTy(), 0.0), ConstantFP::get(getFloatTy(), 0.5));
-    }
-    else
-    {
-        pAlpha = CreateSelect(pIsEvenI, ConstantFP::get(getFloatTy(), 0.25), ConstantFP::get(getFloatTy(), 0.75));
-    }
-
-    Value* pT = CreateFDiv(xChromaInfo.pJ, xChromaInfo.pChromaHeight);
-
-    SmallVector<Value*, 4> coordsChromaA;
-    pSampleInfo->pImageDesc = xChromaInfo.pImageDesc1;
-    coordsChromaA.push_back(CreateFDiv(pSubI, xChromaInfo.pChromaWidth));
-    coordsChromaA.push_back(pT);
-    Instruction* pImageOpA = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaA, pSampleInfo));
-
-    SmallVector<Value*, 4> coordsChromaB;
-    coordsChromaB.push_back(CreateFDiv(CreateFAdd(pSubI, ConstantFP::get(getFloatTy(), 1.0)), xChromaInfo.pChromaWidth));
-    coordsChromaB.push_back(pT);
-    Instruction* pImageOpB = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaB, pSampleInfo));
-
-    Value* pResult = CreateFMix(pImageOpB, pImageOpA, pAlpha);
-
-    return CreateShuffleVector(pResult, pResult, { 0, 2 });
-}
-
-// =====================================================================================================================
-// Create YCbCr Reconstruct linear XY chroma sample
-Value* BuilderImplImage::YCbCrReconstructLinearXYChromaSample(
-    XYChromaSampleInfo& xyChromaInfo) // [In] Infomation for downsampled chroma channels in XY dimension
-{
-    YCbCrSampleInfo* pSampleInfo = xyChromaInfo.pYCbCrInfo;
-
-    Value* pWidth = xyChromaInfo.pChromaWidth;
-    Value* pHeight = xyChromaInfo.pChromaHeight;
-
-    Value* pIsEvenI = CreateICmpEQ(CreateSMod(CreateFPToSI(xyChromaInfo.pI,  getInt32Ty()), getInt32(2)), getInt32(0));
-    Value* pIsEvenJ = CreateICmpEQ(CreateSMod(CreateFPToSI(xyChromaInfo.pJ,  getInt32Ty()), getInt32(2)), getInt32(0));
-
-    Value* pSubI = CreateUnaryIntrinsic(Intrinsic::floor,
-                                        CreateFDiv(xyChromaInfo.pI, ConstantFP::get(getFloatTy(), 2.0)));
-    Value* pSubJ = CreateUnaryIntrinsic(Intrinsic::floor,
-                                        CreateFDiv(xyChromaInfo.pJ, ConstantFP::get(getFloatTy(), 2.0)));
-
-    if (xyChromaInfo.xChromaOffset != ChromaLocation::CositedEven)
-    {
-        pSubI = CreateSelect(pIsEvenI,
-                             CreateFSub(pSubI, ConstantFP::get(getFloatTy(), 1.0)),
-                             pSubI);
-    }
-
-    if (xyChromaInfo.yChromaOffset != ChromaLocation::CositedEven)
-    {
-        pSubJ = CreateSelect(pIsEvenJ,
-                             CreateFSub(pSubJ, ConstantFP::get(getFloatTy(), 1.0)),
-                             pSubJ);
-    }
-
-    Value* pAlpha = nullptr;
-    if (xyChromaInfo.xChromaOffset == ChromaLocation::CositedEven)
-    {
-        pAlpha = CreateSelect(pIsEvenI, ConstantFP::get(getFloatTy(), 0.0), ConstantFP::get(getFloatTy(), 0.5));
-    }
-    else
-    {
-        pAlpha = CreateSelect(pIsEvenI, ConstantFP::get(getFloatTy(), 0.25), ConstantFP::get(getFloatTy(), 0.75));
-    }
-
-    Value* pBeta = nullptr;
-    if (xyChromaInfo.yChromaOffset == ChromaLocation::CositedEven)
-    {
-        pBeta = CreateSelect(pIsEvenJ, ConstantFP::get(getFloatTy(), 0.0), ConstantFP::get(getFloatTy(), 0.5));
-    }
-    else
-    {
-        pBeta = CreateSelect(pIsEvenJ, ConstantFP::get(getFloatTy(), 0.25), ConstantFP::get(getFloatTy(), 0.75));
-    }
-
-    SmallVector<Value*, 4> coordsChromaTL;
-    SmallVector<Value*, 4> coordsChromaTR;
-    SmallVector<Value*, 4> coordsChromaBL;
-    SmallVector<Value*, 4> coordsChromaBR;
-
-    Value* pResult = nullptr;
-    if (xyChromaInfo.planeNum == 2)
-    {
-        pSampleInfo->pImageDesc = xyChromaInfo.pImageDesc1;
-
-        // Sample TL
-        coordsChromaTL.push_back(CreateFDiv(pSubI, pWidth));
-        coordsChromaTL.push_back(CreateFDiv(pSubJ, pHeight));
-        Instruction* pTL = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaTL, pSampleInfo));
-
-        // Sample TR
-        coordsChromaTR.push_back(CreateFDiv(CreateFAdd(pSubI, ConstantFP::get(getFloatTy(), 1.0)), pWidth));
-        coordsChromaTR.push_back(CreateFDiv(pSubJ, pHeight));
-        Instruction* pTR = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaTR, pSampleInfo));
-
-        // Sample BL
-        coordsChromaBL.push_back(CreateFDiv(pSubI, pWidth));
-        coordsChromaBL.push_back(CreateFDiv(CreateFAdd(pSubJ, ConstantFP::get(getFloatTy(), 1.0)), pHeight));
-        Instruction* pBL = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaBL, pSampleInfo));
-
-        // Sample BR
-        coordsChromaBR.push_back(CreateFDiv(CreateFAdd(pSubI, ConstantFP::get(getFloatTy(), 1.0)), pWidth));
-        coordsChromaBR.push_back(CreateFDiv(CreateFAdd(pSubJ, ConstantFP::get(getFloatTy(), 1.0)), pHeight));
-        Instruction* pBR = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaBR, pSampleInfo));
-
-        // Linear interpolate
-        pResult = BilinearBlend(pAlpha, pBeta, pTL, pTR, pBL, pBR);
-        pResult = CreateShuffleVector(pResult, pResult, { 0, 2});
-    }
-    else if (xyChromaInfo.planeNum == 3)
-    {
-        // Sample TL
-        coordsChromaTL.push_back(CreateFDiv(pSubI, pWidth));
-        coordsChromaTL.push_back(CreateFDiv(pSubJ, pHeight));
-        pSampleInfo->pImageDesc = xyChromaInfo.pImageDesc1;
-        Value* pTLb = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaTL, pSampleInfo));
-
-        pSampleInfo->pImageDesc = xyChromaInfo.pImageDesc2;
-        Value* pTLr = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaTL, pSampleInfo));
-        Value* pTL = CreateShuffleVector(pTLr, pTLb, { 0, 6});
-
-        // Sample TR
-        coordsChromaTR.push_back(CreateFDiv(CreateFAdd(pSubI, ConstantFP::get(getFloatTy(), 1.0)), pWidth));
-        coordsChromaTR.push_back(CreateFDiv(pSubJ, pHeight));
-        pSampleInfo->pImageDesc = xyChromaInfo.pImageDesc1;
-        Value* pTRb = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaTR, pSampleInfo));
-
-        pSampleInfo->pImageDesc = xyChromaInfo.pImageDesc2;
-        Value* pTRr = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaTR, pSampleInfo));
-        Value* pTR = CreateShuffleVector(pTRr, pTRb, { 0, 6});
-
-        // Sample BL
-        coordsChromaBL.push_back(CreateFDiv(pSubI, pWidth));
-        coordsChromaBL.push_back(CreateFDiv(CreateFAdd(pSubJ, ConstantFP::get(getFloatTy(), 1.0)), pHeight));
-        pSampleInfo->pImageDesc = xyChromaInfo.pImageDesc1;
-        Value* pBLb = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaBL, pSampleInfo));
-        pSampleInfo->pImageDesc = xyChromaInfo.pImageDesc2;
-        Value* pBLr = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaBL, pSampleInfo));
-        Value* pBL = CreateShuffleVector(pBLr, pBLb, { 0, 6});
-
-        // Sample BR
-        coordsChromaBR.push_back(CreateFDiv(CreateFAdd(pSubI, ConstantFP::get(getFloatTy(), 1.0)), pWidth));
-        coordsChromaBR.push_back(CreateFDiv(CreateFAdd(pSubJ, ConstantFP::get(getFloatTy(), 1.0)), pHeight));
-        pSampleInfo->pImageDesc = xyChromaInfo.pImageDesc1;
-        Value* pBRb = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaBR, pSampleInfo));
-        pSampleInfo->pImageDesc = xyChromaInfo.pImageDesc2;
-        Value* pBRr = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsChromaBR, pSampleInfo));
-        Value* pBR = CreateShuffleVector(pBRr, pBRb, { 0, 6});
-
-        // Linear interpolate
-        pResult = BilinearBlend(pAlpha, pBeta, pTL, pTR, pBL, pBR);
-    }
-
-    return pResult;
-}
-
-// =====================================================================================================================
-// Create YCbCr image sample internal
-Value* BuilderImplImage::YCbCrCreateImageSampleInternal(
-    SmallVectorImpl<Value*>& coords,     // ST coords
-    YCbCrSampleInfo*         pYCbCrInfo) // [In] YCbCr smaple information
-{
-    Value* pCoords = CreateInsertElement(Constant::getNullValue(VectorType::get(coords[0]->getType(), 2)),
-                                         coords[0],
-                                         uint64_t(0));
-
-    pCoords = CreateInsertElement(pCoords, coords[1], uint64_t(1));
-
-    return CreateImageSampleGather(pYCbCrInfo->pResultTy,
-                                   pYCbCrInfo->dim,
-                                   pYCbCrInfo->flags,
-                                   pCoords,
-                                   pYCbCrInfo->pImageDesc,
-                                   pYCbCrInfo->pSamplerDesc,
-                                   pYCbCrInfo->address,
-                                   pYCbCrInfo->instNameStr,
-                                   pYCbCrInfo->isSample);
-}
-
-// =====================================================================================================================
-// Replace [beginBit, beginBit + adjustBits) bits with data in specific word
-Value* BuilderImplImage::ReplaceBitsInWord(
-    Value*      pWord,      // [in] Target wowrd
-    uint32_t    beginBit,   // The first bit to be replaced
-    uint32_t    adjustBits, // The number of bits should be replaced
-    Value*      pData)      // [in] The data used to replace specific bits
-{
-    uint32_t mask = ((1 << adjustBits) - 1) << beginBit;
-
-    Value* pMask = getInt32(mask);
-    Value* pInvMask = getInt32(~mask);
-    Value* pBeginBit = getInt32(beginBit);
-
-    if (auto pWordVecTy = dyn_cast<VectorType>(pWord->getType()))
-    {
-        if (isa<VectorType>(pData->getType()) == false)
-        {
-            pData = CreateVectorSplat(pWordVecTy->getNumElements(), pData);
-        }
-        pMask = CreateVectorSplat(pWordVecTy->getNumElements(), pMask);
-        pInvMask = CreateVectorSplat(pWordVecTy->getNumElements(), pInvMask);
-        pBeginBit = CreateVectorSplat(pWordVecTy->getNumElements(), pBeginBit);
-    }
-    else
-    {
-        if (auto pDataVecTy = dyn_cast<VectorType>(pData->getType()))
-        {
-            pWord = CreateVectorSplat(pDataVecTy->getNumElements(), pWord);
-            pMask = CreateVectorSplat(pDataVecTy->getNumElements(), pMask);
-            pInvMask = CreateVectorSplat(pDataVecTy->getNumElements(), pInvMask);
-            pBeginBit = CreateVectorSplat(pDataVecTy->getNumElements(), pBeginBit);
-        }
-    }
-
-    Value* pNewWord = CreateAnd(pWord, pInvMask); // (pWord & ~mask)
-    pData = CreateAnd(CreateShl(pData, pBeginBit), pMask); // ((pData << beginBit) & mask)
-    pNewWord = CreateOr(pNewWord, pData);
-    return pNewWord;
-}
-
-// =====================================================================================================================
-// Generate sampler descriptor for YCbCr conversion
-Value* BuilderImplImage::YCbCrGenerateSamplerDesc(
-    Value*           pSamplerDesc,                // [in] Sampler descriptor
-    SamplerFilter    filter,                      // The type of sampler filter
-    bool             forceExplicitReconstruction) // Enable/Disable force explict chroma reconstruction
-{
-    Value* pSamplerDescNew = UndefValue::get(pSamplerDesc->getType());
-
-    Value* pSampWord0 = CreateExtractElement(pSamplerDesc, getInt64(0));
-    Value* pSampWord1 = CreateExtractElement(pSamplerDesc, getInt64(1));
-    Value* pSampWord2 = CreateExtractElement(pSamplerDesc, getInt64(2));
-    Value* pSampWord3 = CreateExtractElement(pSamplerDesc, getInt64(3));
-
-    /// Determines if "TexFilter" should be ignored or not.
-    // enum class TexFilterMode : uint32
-    // {
-    //     Blend = 0x0, ///< Use the filter method specified by the TexFilter enumeration
-    //     Min   = 0x1, ///< Use the minimum value returned by the sampler, no blending op occurs
-    //     Max   = 0x2, ///< Use the maximum value returned by the sampler, no blending op occurs
-    // };
-    pSampWord0 = ReplaceBitsInWord(pSampWord0, 30, 2, getInt32(0b00)); // Force use blend mode
-
-    /// Enumeration which defines the mode for magnification and minification sampling
-    // enum XyFilter : uint32
-    // {
-    //     XyFilterPoint = 0,          ///< Use single point sampling
-    //     XyFilterLinear,             ///< Use linear sampling
-    //     XyFilterAnisotropicPoint,   ///< Use anisotropic with single point sampling
-    //     XyFilterAnisotropicLinear,  ///< Use anisotropic with linear sampling
-    //     XyFilterCount
-    // };
-    if ((filter == SamplerFilter::Nearest) || forceExplicitReconstruction)
-    {
-        pSampWord2 = ReplaceBitsInWord(pSampWord2, 20, 4, getInt32(0b0000));
-    }
-    else //filter == SamplerFilter::Linear
-    {
-        pSampWord2 = ReplaceBitsInWord(pSampWord2, 20, 4, getInt32(0b0101));
-    }
-
-    pSamplerDescNew = CreateInsertElement(pSamplerDescNew, pSampWord0, getInt64(0));
-    pSamplerDescNew = CreateInsertElement(pSamplerDescNew, pSampWord1, getInt64(1));
-    pSamplerDescNew = CreateInsertElement(pSamplerDescNew, pSampWord2, getInt64(2));
-    pSamplerDescNew = CreateInsertElement(pSamplerDescNew, pSampWord3, getInt64(3));
-
-    return pSamplerDescNew;
-}
-
-// =====================================================================================================================
-// Implement range expanding operation on checking whether the encoding uses full numerical range on luma channel
-Value* BuilderImplImage::YCbCrRangeExpand(
-    SamplerYCbCrRange    range,   // Specifies whether the encoding uses the full numerical range
-    const uint32_t*      pBits,   // Channel bits
-    Value*               pSample) // [in] Sample results which need range expansion, assume in sequence => Cr, Y, Cb
-{
-    switch (range)
-    {
-    case SamplerYCbCrRange::ItuFull:
-    {
-        //              [2^(n - 1)/((2^n) - 1)]
-        // pConvVec1 =  [         0.0         ]
-        //              [2^(n - 1)/((2^n) - 1)]
-        float row0Num = static_cast<float>(0x1u << (pBits[0] - 0x1u)) / ((0x1u << pBits[0]) - 1u);
-        float row2Num = static_cast<float>(0x1u << (pBits[2] - 0x1u)) / ((0x1u << pBits[2]) - 1u);
-
-        Value* pConvVec1 = UndefValue::get(VectorType::get(getFloatTy(), 3));
-        pConvVec1 = CreateInsertElement(pConvVec1, ConstantFP::get(getFloatTy(), row0Num), uint64_t(0));
-        pConvVec1 = CreateInsertElement(pConvVec1, ConstantFP::get(getFloatTy(), 0.0f), uint64_t(1));
-        pConvVec1 = CreateInsertElement(pConvVec1, ConstantFP::get(getFloatTy(), row2Num), uint64_t(2));
-
-        //          [Cr]   pConvVec1[0]
-        // result = [ Y] - pConvVec1[1]
-        //          [Cb]   pConvVec1[2]
-        return CreateFSub(pSample, pConvVec1);
-    }
-    case SamplerYCbCrRange::ItuNarrow:
-    {
-        //             [(2^n - 1)/(224 x (2^(n - 8))]
-        // pConvVec1 = [(2^n - 1)/(219 x (2^(n - 8))]
-        //             [(2^n - 1)/(224 x (2^(n - 8))]
-        float row0Num = static_cast<float>((0x1u << pBits[0]) - 1u) / (224u * (0x1u << (pBits[0] - 8)));
-        float row1Num = static_cast<float>((0x1u << pBits[1]) - 1u) / (219u * (0x1u << (pBits[1] - 8)));
-        float row2Num = static_cast<float>((0x1u << pBits[2]) - 1u) / (224u * (0x1u << (pBits[2] - 8)));
-
-        Value* pConvVec1 = UndefValue::get(VectorType::get(getFloatTy(), 3));
-        pConvVec1 = CreateInsertElement(pConvVec1, ConstantFP::get(getFloatTy(), row0Num), uint64_t(0));
-        pConvVec1 = CreateInsertElement(pConvVec1, ConstantFP::get(getFloatTy(), row1Num), uint64_t(1));
-        pConvVec1 = CreateInsertElement(pConvVec1, ConstantFP::get(getFloatTy(), row2Num), uint64_t(2));
-
-        //             [(128 x (2^(n - 8))/(224 x (2^(n - 8))]
-        // pConvVec2 = [( 16 x (2^(n - 8))/(219 x (2^(n - 8))]
-        //             [(128 x (2^(n - 8))/(224 x (2^(n - 8))]
-        row0Num = static_cast<float>(128u * (0x1u << (pBits[0] - 8))) / (224u * (0x1u << (pBits[0] - 8)));
-        row1Num = static_cast<float>( 16u * (0x1u << (pBits[1] - 8))) / (219u * (0x1u << (pBits[1] - 8)));
-        row2Num = static_cast<float>(128u * (0x1u << (pBits[2] - 8))) / (224u * (0x1u << (pBits[2] - 8)));
-
-        Value* pConvVec2 = UndefValue::get(VectorType::get(getFloatTy(), 3));
-        pConvVec2 = CreateInsertElement(pConvVec2, ConstantFP::get(getFloatTy(), row0Num), uint64_t(0));
-        pConvVec2 = CreateInsertElement(pConvVec2, ConstantFP::get(getFloatTy(), row1Num), uint64_t(1));
-        pConvVec2 = CreateInsertElement(pConvVec2, ConstantFP::get(getFloatTy(), row2Num), uint64_t(2));
-
-        //          pConvVec1[0]   [Cr]   pConvVec2[0]
-        // result = pConvVec1[1] * [ Y] - pConvVec2[1]
-        //          pConvVec1[2]   [Cb]   pConvVec2[2]
-        return CreateFSub(CreateFMul(pSample, pConvVec1), pConvVec2);
-    }
-
-    default:
-        LLPC_NEVER_CALLED();
-        return nullptr;
-    }
-}
-
-// =====================================================================================================================
-// Implement the color transfer operation for conversion from  YCbCr to RGB color model
-Value* BuilderImplImage::YCbCrConvertColor(
-    Type*                          pResultTy,  // [in] Result type, assumed in <4 x f32>
-    SamplerYCbCrModelConversion    colorModel, // The color conversion model
-    SamplerYCbCrRange              range,      // Specifies whether the encoding uses the full numerical range
-    uint32_t*                      pBits,      // Channel bits
-    Value*                         pImageOp)   // [in] Results which need color conversion, in sequence => Cr, Y, Cb
-{
-    Value* pSubImage = CreateShuffleVector(pImageOp, pImageOp, { 0, 1, 2 });
-
-    Value* pMinVec = UndefValue::get(VectorType::get(getFloatTy(), 3));
-    pMinVec = CreateInsertElement(pMinVec, ConstantFP::get(getFloatTy(), -0.5), uint64_t(0));
-    pMinVec = CreateInsertElement(pMinVec, ConstantFP::get(getFloatTy(),  0.0), uint64_t(1));
-    pMinVec = CreateInsertElement(pMinVec, ConstantFP::get(getFloatTy(), -0.5), uint64_t(2));
-
-    Value* pMaxVec = UndefValue::get(VectorType::get(getFloatTy(), 3));
-    pMaxVec = CreateInsertElement(pMaxVec, ConstantFP::get(getFloatTy(), 0.5), uint64_t(0));
-    pMaxVec = CreateInsertElement(pMaxVec, ConstantFP::get(getFloatTy(), 1.0), uint64_t(1));
-    pMaxVec = CreateInsertElement(pMaxVec, ConstantFP::get(getFloatTy(), 0.5), uint64_t(2));
-
-    Value* pResult = UndefValue::get(pResultTy);
-
-    switch (colorModel)
-    {
-    case SamplerYCbCrModelConversion::RgbIdentity:
-    {
-        //pResult[Cr] = C'_rgba [R]
-        //pResult[Y]  = C'_rgba [G]
-        //pResult[Cb] = C'_rgba [B]
-        //pResult[a]  = C'_rgba [A]
-        pResult = pImageOp;
-        break;
-    }
-    case SamplerYCbCrModelConversion::YCbCrIdentity:
-    {
-        // pResult = RangeExpaned(C'_rgba)
-        pSubImage = CreateFClamp(YCbCrRangeExpand(range, pBits, pSubImage), pMinVec, pMaxVec);
-        Value* pOutputR = CreateExtractElement(pSubImage, getInt64(0));
-        Value* pOutputG = CreateExtractElement(pSubImage, getInt64(1));
-        Value* pOutputB = CreateExtractElement(pSubImage, getInt64(2));
-        Value* pOutputA = CreateExtractElement(pImageOp, getInt64(3));
-
-        pResult = CreateInsertElement(pResult, pOutputR, getInt64(0));
-        pResult = CreateInsertElement(pResult, pOutputG, getInt64(1));
-        pResult = CreateInsertElement(pResult, pOutputB, getInt64(2));
-        pResult = CreateInsertElement(pResult, pOutputA, getInt64(3));
-        break;
-    }
-    case SamplerYCbCrModelConversion::YCbCr601:
-    case SamplerYCbCrModelConversion::YCbCr709:
-    case SamplerYCbCrModelConversion::YCbCr2020:
-    {
-        // pInputVec = RangeExpaned(C'_rgba)
-        Value* pInputVec = CreateFClamp(YCbCrRangeExpand(range, pBits, pSubImage), pMinVec, pMaxVec);
-
-        Value* pRow0 = UndefValue::get(VectorType::get(getFloatTy(), 3));
-        Value* pRow1 = UndefValue::get(VectorType::get(getFloatTy(), 3));
-        Value* pRow2 = UndefValue::get(VectorType::get(getFloatTy(), 3));
-
-        if (colorModel == SamplerYCbCrModelConversion::YCbCr601)
-        {
-            //           [            1.402f,   1.0f,               0.0f]
-            // convMat = [-0.419198 / 0.587f,   1.0f, -0.202008 / 0.587f]
-            //           [              0.0f,   1.0f,             1.772f]
-
-            pRow0 = CreateInsertElement(pRow0, ConstantFP::get(getFloatTy(), 1.402f), uint64_t(0));
-            pRow0 = CreateInsertElement(pRow0, ConstantFP::get(getFloatTy(),   1.0f), uint64_t(1));
-            pRow0 = CreateInsertElement(pRow0, ConstantFP::get(getFloatTy(),   0.0f), uint64_t(2));
-
-            float row1Col0 = static_cast<float>(-0.419198 / 0.587);
-            float row1Col2 = static_cast<float>(-0.202008 / 0.587);
-
-            pRow1 = CreateInsertElement(pRow1, ConstantFP::get(getFloatTy(), row1Col0), uint64_t(0));
-            pRow1 = CreateInsertElement(pRow1, ConstantFP::get(getFloatTy(),     1.0f), uint64_t(1));
-            pRow1 = CreateInsertElement(pRow1, ConstantFP::get(getFloatTy(), row1Col2), uint64_t(2));
-
-            pRow2 = CreateInsertElement(pRow2, ConstantFP::get(getFloatTy(),   0.0f), uint64_t(0));
-            pRow2 = CreateInsertElement(pRow2, ConstantFP::get(getFloatTy(),   1.0f), uint64_t(1));
-            pRow2 = CreateInsertElement(pRow2, ConstantFP::get(getFloatTy(), 1.772f), uint64_t(2));
-        }
-        else if (colorModel == SamplerYCbCrModelConversion::YCbCr709)
-        {
-            //           [              1.5748f,   1.0f,                  0.0f]
-            // convMat = [-0.33480248 / 0.7152f,   1.0f, -0.13397432 / 0.7152f]
-            //           [                 0.0f,   1.0f,               1.8556f]
-
-            pRow0 = CreateInsertElement(pRow0, ConstantFP::get(getFloatTy(), 1.5748f), uint64_t(0));
-            pRow0 = CreateInsertElement(pRow0, ConstantFP::get(getFloatTy(),    1.0f), uint64_t(1));
-            pRow0 = CreateInsertElement(pRow0, ConstantFP::get(getFloatTy(),    0.0f), uint64_t(2));
-
-            float row1Col0 = static_cast<float>(-0.33480248 / 0.7152);
-            float row1Col2 = static_cast<float>(-0.13397432 / 0.7152);
-
-            pRow1 = CreateInsertElement(pRow1, ConstantFP::get(getFloatTy(), row1Col0), uint64_t(0));
-            pRow1 = CreateInsertElement(pRow1, ConstantFP::get(getFloatTy(),     1.0f), uint64_t(1));
-            pRow1 = CreateInsertElement(pRow1, ConstantFP::get(getFloatTy(), row1Col2), uint64_t(2));
-
-            pRow2 = CreateInsertElement(pRow2, ConstantFP::get(getFloatTy(),    0.0f), uint64_t(0));
-            pRow2 = CreateInsertElement(pRow2, ConstantFP::get(getFloatTy(),    1.0f), uint64_t(1));
-            pRow2 = CreateInsertElement(pRow2, ConstantFP::get(getFloatTy(), 1.8556f), uint64_t(2));
-        }
-        else
-        {
-            //           [              1.4746f,   1.0f,                  0.0f]
-            // convMat = [-0.38737742 / 0.6780f,   1.0f, -0.11156702 / 0.6780f]
-            //           [                 0.0f,   1.0f,               1.8814f]
-
-            pRow0 = CreateInsertElement(pRow0, ConstantFP::get(getFloatTy(), 1.4746f), uint64_t(0));
-            pRow0 = CreateInsertElement(pRow0, ConstantFP::get(getFloatTy(),    1.0f), uint64_t(1));
-            pRow0 = CreateInsertElement(pRow0, ConstantFP::get(getFloatTy(),    0.0f), uint64_t(2));
-
-            float row1Col0 = static_cast<float>(-0.38737742 / 0.6780);
-            float row1Col2 = static_cast<float>(-0.11156702 / 0.6780);
-
-            pRow1 = CreateInsertElement(pRow1, ConstantFP::get(getFloatTy(), row1Col0), uint64_t(0));
-            pRow1 = CreateInsertElement(pRow1, ConstantFP::get(getFloatTy(),     1.0f), uint64_t(1));
-            pRow1 = CreateInsertElement(pRow1, ConstantFP::get(getFloatTy(), row1Col2), uint64_t(2));
-
-            pRow2 = CreateInsertElement(pRow2, ConstantFP::get(getFloatTy(),    0.0f), uint64_t(0));
-            pRow2 = CreateInsertElement(pRow2, ConstantFP::get(getFloatTy(),    1.0f), uint64_t(1));
-            pRow2 = CreateInsertElement(pRow2, ConstantFP::get(getFloatTy(), 1.8814f), uint64_t(2));
-        }
-
-        // output[R]             [Cr]
-        // output[G] = convMat * [ Y]
-        // output[B]             [Cb]
-
-        Value* pOutputR = CreateDotProduct(pRow0, pInputVec);
-        Value* pOutputG = CreateDotProduct(pRow1, pInputVec);
-        Value* pOutputB = CreateDotProduct(pRow2, pInputVec);
-        Value* pOutputA = CreateExtractElement(pImageOp, getInt64(3));
-
-        pResult = CreateInsertElement(pResult, pOutputR, getInt64(0));
-        pResult = CreateInsertElement(pResult, pOutputG, getInt64(1));
-        pResult = CreateInsertElement(pResult, pOutputB, getInt64(2));
-        pResult = CreateInsertElement(pResult, pOutputA, getInt64(3));
-        break;
-    }
-
-    default:
-        LLPC_NEVER_CALLED();
-        break;
-    }
-
-    if (colorModel != SamplerYCbCrModelConversion::YCbCrIdentity)
-    {
-        pResult = CreateFClamp(pResult,
-                               CreateVectorSplat(4, ConstantFP::get(getFloatTy(), 0.0)),
-                               CreateVectorSplat(4, ConstantFP::get(getFloatTy(), 1.0)));
-    }
-
-    return pResult;
-}
-
-// =====================================================================================================================
-// Implement transfer form  ST coordinates to UV coordiantes operation
-Value* BuilderImplImage::TransferSTtoUVCoords(
-    Value* pST,   // [in] ST coords
-    Value* pSize) // [in] with/height
-{
-    return CreateFMul(pST, pSize);
-}
-
-// =====================================================================================================================
-// Implement the adjustment of UV coordinates when the sample location associated with
-// downsampled chroma channels in the X/XY dimension occurs
-Value* BuilderImplImage::YCbCrCalculateImplicitChromaUV(
-    ChromaLocation offset, // The sample location associated with downsampled chroma channels in X dimension
-    Value*         pUV)    // [in] UV coordinates
-{
-    if (offset == ChromaLocation::CositedEven)
-    {
-        pUV = CreateFAdd(pUV, ConstantFP::get(getFloatTy(), 0.5f));
-    }
-
-    return CreateFMul(pUV, ConstantFP::get(getFloatTy(), 0.5f));
-}
-
-// =====================================================================================================================
-// Transfer IJ coordinates from UV coordinates
-Value* BuilderImplImage::TransferUVtoIJCoords(
-    SamplerFilter filter, // Nearest or Linear sampler filter
-    Value*        pUV)    // [in] UV coordinates
-{
-    LLPC_ASSERT((filter == SamplerFilter::Nearest) || (filter == SamplerFilter::Linear));
-
-    if (filter == SamplerFilter::Linear)
-    {
-        pUV = CreateFSub(pUV, ConstantFP::get(getFloatTy(), 0.5f));
-    }
-
-    return CreateUnaryIntrinsic(Intrinsic::floor, pUV);
-}
-
-// =====================================================================================================================
-// Calculate UV offset to top-left pixel
-Value* BuilderImplImage::CalculateUVoffset(
-    Value* pUV) // [in] UV coordinates
-{
-    Value* pUVBaised = CreateFSub(pUV, ConstantFP::get(getFloatTy(), 0.5f));
-    Value* pIJ = CreateUnaryIntrinsic(Intrinsic::floor, pUVBaised);
-    return CreateFSub(pUVBaised, pIJ);
-}
-
-// =====================================================================================================================
-// Implement bilinear blending
-Value* BuilderImplImage::BilinearBlend(
-    Value*   pAlpha, // [In] Horizen weight
-    Value*   pBeta,  // [In] Vertical weight
-    Value*   pTL,    // [In] Top-left pixel
-    Value*   pTR,    // [In] Top-right pixel
-    Value*   pBL,    // [In] Bottom-left pixel
-    Value*   pBR)    // [In] Bottm-right pixel
-{
-    Value* pTop = CreateFMix(pTL, pTR, pAlpha);
-    Value* pBot = CreateFMix(pBL, pBR, pAlpha);
-
-    return CreateFMix(pTop, pBot, pBeta);
-}
-
-// =====================================================================================================================
 // Create an image YCbCr sampler.
 // The caller supplies all arguments to the image sample op in "address", in the order specified
 // by the indices defined as ImageIndex* below.
@@ -1869,9 +1237,10 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
 
     // Init sample descriptor for luma channel
     Value* pSamplerDescLuma   = pSamplerDesc;
-
+    SamplerYCbCrHelper yCbCrHelper = {};
+    yCbCrHelper.Register(this);
     // Init sample descriptor for chroma channels
-    Value* pSamplerDescChroma = YCbCrGenerateSamplerDesc(pSamplerDesc, chromaFilter, forceExplicitReconstruct);
+    Value* pSamplerDescChroma = yCbCrHelper.YCbCrGenerateSamplerDesc(pSamplerDesc, chromaFilter, forceExplicitReconstruct);
 
     // Extract SQ_IMG_RSRC_WORD
     Value* pWord0 = CreateExtractElement(pImageDesc, getInt64(0));
@@ -1949,9 +1318,9 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
     pWord2HeightVec3 = CreateInsertElement(pWord2HeightVec3, pWord2BitsHeightCbCr, getInt64(2));
 
     // Replace [0:14) bits of pWord2 with pWord2WidthVec3
-    Value* pWord2Vec3 = ReplaceBitsInWord(pWord2, 0, 14, pWord2WidthVec3);
+    Value* pWord2Vec3 = yCbCrHelper.ReplaceBitsInWord(pWord2, 0, 14, pWord2WidthVec3);
     // Replace [14:28) bits of pWord2Vec3 with pWord2HeightVec3
-    pWord2Vec3 = ReplaceBitsInWord(pWord2Vec3, 14, 14, pWord2HeightVec3);
+    pWord2Vec3 = yCbCrHelper.ReplaceBitsInWord(pWord2Vec3, 14, 14, pWord2HeightVec3);
 
     Value* pWord2Cb   = CreateExtractElement(pWord2Vec3, getInt32(0));
     Value* pWord2Cr   = CreateExtractElement(pWord2Vec3, getInt32(1));
@@ -1970,7 +1339,7 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
                                               getInt64(2));
 
     // Replace [0:12) bits of pWord3 with pWord3DstSelXYZWVec3
-    Value* pWord3Vec3 = ReplaceBitsInWord(pWord3, 0, 12, pWord3DstSelXYZWVec3);
+    Value* pWord3Vec3 = yCbCrHelper.ReplaceBitsInWord(pWord3, 0, 12, pWord3DstSelXYZWVec3);
 
     Value* pWord3Cb   = CreateExtractElement(pWord3Vec3, getInt32(0));
     Value* pWord3Cr   = CreateExtractElement(pWord3Vec3, getInt32(1));
@@ -1989,7 +1358,7 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
     Value* pWord4Vec3 = pWord4BitsDepth;
 
     // Replace [13:29) bits of pWord4Vec3 with pWord4BitsPitchCb
-    pWord4Vec3 = ReplaceBitsInWord(pWord4Vec3, 13, 16, pWord4BitsPitchCb);
+    pWord4Vec3 = yCbCrHelper.ReplaceBitsInWord(pWord4Vec3, 13, 16, pWord4BitsPitchCb);
 
     //                  [4]
     // pWord4LastBits = [5]
@@ -2000,7 +1369,7 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
     pWord4LastBits = CreateInsertElement(pWord4LastBits, getInt32(6), getInt64(2));
 
     // Replace [29:32) bits of pWord4Vec3 with pWord4LastBits
-    pWord4Vec3 = ReplaceBitsInWord(pWord4Vec3, 29, 3, pWord4LastBits);
+    pWord4Vec3 = yCbCrHelper.ReplaceBitsInWord(pWord4Vec3, 29, 3, pWord4LastBits);
     Value* pWord4Cb   = CreateExtractElement(pWord4Vec3, getInt32(0));
     Value* pWord4Cr   = CreateExtractElement(pWord4Vec3, getInt32(1));
     Value* pWord4CbCr = CreateExtractElement(pWord4Vec3, getInt32(2));
@@ -2069,7 +1438,7 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
         pImageDesc1 = CreateInsertElement(pImageDesc1, pWord2CbCr, getInt64(2));
         pImageDesc1 = CreateInsertElement(pImageDesc1, pWord3CbCr, getInt64(3));
         pWord4BitsPitchCb = CreateSub(pWord4BitsPitchCb, getInt32(1));
-        Value* pWord4CbCr = ReplaceBitsInWord(pWord4, 13, 16, pWord4BitsPitchCb);
+        Value* pWord4CbCr = yCbCrHelper.ReplaceBitsInWord(pWord4, 13, 16, pWord4BitsPitchCb);
         pImageDesc1 = CreateInsertElement(pImageDesc1, pWord4CbCr, getInt64(4));
         pImageDesc1 = CreateInsertElement(pImageDesc1, pWord5,      getInt64(5));
         pImageDesc1 = CreateInsertElement(pImageDesc1, pWord6,      getInt64(6));
@@ -2139,10 +1508,10 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
     //( pS,pT,r,q,a) to (pU,pV,w,a) Transformation
     Value* pS = coords[0];
     Value* pT = coords[1];
-    Value* pU = TransferSTtoUVCoords(pS, pWidth);
-    Value* pV = TransferSTtoUVCoords(pT, pHeight);
-    Value* pI = TransferUVtoIJCoords(lumaFilter, pU);
-    Value* pJ = TransferUVtoIJCoords(lumaFilter, pV);
+    Value* pU = yCbCrHelper.TransferSTtoUVCoords(pS, pWidth);
+    Value* pV = yCbCrHelper.TransferSTtoUVCoords(pT, pHeight);
+    Value* pI = yCbCrHelper.TransferUVtoIJCoords(lumaFilter, pU);
+    Value* pJ = yCbCrHelper.TransferUVtoIJCoords(lumaFilter, pV);
 
     SmallVector<Value*, 4> coordsLuma;
     SmallVector<Value*, 4> coordsChroma;
@@ -2156,7 +1525,7 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
     YCbCrSampleInfo sampleInfoLuma = {pResultTy, dim, flags, pImageDesc, pSamplerDescLuma, address, instName.str(), isSample};
 
     // Sample Y and A channels
-    Value* pImageOpLuma = static_cast<Instruction*>(YCbCrCreateImageSampleInternal(coordsLuma, &sampleInfoLuma));
+    Value* pImageOpLuma = static_cast<Instruction*>(yCbCrHelper.YCbCrCreateImageSampleInternal(coordsLuma, &sampleInfoLuma));
     pImageOpLuma = CreateShuffleVector(pImageOpLuma, pImageOpLuma, { 1, 3 });
 
     // Init sample chroma info
@@ -2215,17 +1584,17 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
                 wrappedSampleInfo.subsampledX = false;
                 wrappedSampleInfo.subsampledY = false;
 
-                pImageOpChroma = YCbCrWrappedSample(wrappedSampleInfo);
+                pImageOpChroma = yCbCrHelper.YCbCrWrappedSample(wrappedSampleInfo);
             }
             else // SamplerFilter::Linear
             {
                 if (subsampledY)
                 {
-                    pImageOpChroma = YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
+                    pImageOpChroma = yCbCrHelper.YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
                 }
                 else
                 {
-                    pImageOpChroma = YCbCrReconstructLinearXChromaSample(xChromaInfo);
+                    pImageOpChroma = yCbCrHelper.YCbCrReconstructLinearXChromaSample(xChromaInfo);
                 }
             }
         }
@@ -2233,23 +1602,23 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
         {
             if (subsampledX)
             {
-                wrappedSampleInfo.pI = YCbCrCalculateImplicitChromaUV(xChromaOffset, pU);
+                wrappedSampleInfo.pI = yCbCrHelper.YCbCrCalculateImplicitChromaUV(xChromaOffset, pU);
             }
 
             if (subsampledY)
             {
-                wrappedSampleInfo.pJ = YCbCrCalculateImplicitChromaUV(yChromaOffset, pV);
+                wrappedSampleInfo.pJ = yCbCrHelper.YCbCrCalculateImplicitChromaUV(yChromaOffset, pV);
             }
 
-            pImageOpChroma = YCbCrWrappedSample(wrappedSampleInfo);
+            pImageOpChroma = yCbCrHelper.YCbCrWrappedSample(wrappedSampleInfo);
         }
     }
     else //lumaFilter == SamplerFilter::Linear
     {
         if (forceExplicitReconstruct || !(subsampledX || subsampledY))
         {
-            Value* pLumaA = CalculateUVoffset(pU);
-            Value* pLumaB = CalculateUVoffset(pV);
+            Value* pLumaA = yCbCrHelper.CalculateUVoffset(pU);
+            Value* pLumaB = yCbCrHelper.CalculateUVoffset(pV);
             Value* pSubIPlusOne = CreateFAdd(pI, ConstantFP::get(getFloatTy(), 1.0f));
             Value* pSubJPlusOne = CreateFAdd(pJ, ConstantFP::get(getFloatTy(), 1.0f));
 
@@ -2259,7 +1628,7 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
                 {
                     wrappedSampleInfo.subsampledX = false;
                     wrappedSampleInfo.subsampledY = false;
-                    pImageOpChroma = YCbCrWrappedSample(wrappedSampleInfo);
+                    pImageOpChroma = yCbCrHelper.YCbCrWrappedSample(wrappedSampleInfo);
                 }
                 else
                 {
@@ -2279,18 +1648,18 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
 
                     wrappedSampleInfo.pI = pSubI;
                     wrappedSampleInfo.pJ = pSubJ;
-                    Value* pTL = YCbCrWrappedSample(wrappedSampleInfo);
+                    Value* pTL = yCbCrHelper.YCbCrWrappedSample(wrappedSampleInfo);
 
                     wrappedSampleInfo.pI = pSubIPlusOne;
-                    Value* pTR = YCbCrWrappedSample(wrappedSampleInfo);
+                    Value* pTR = yCbCrHelper.YCbCrWrappedSample(wrappedSampleInfo);
 
                     wrappedSampleInfo.pJ = pSubJPlusOne;
-                    Value* pBR = YCbCrWrappedSample(wrappedSampleInfo);
+                    Value* pBR = yCbCrHelper.YCbCrWrappedSample(wrappedSampleInfo);
 
                     wrappedSampleInfo.pI = pSubI;
-                    Value* pBL = YCbCrWrappedSample(wrappedSampleInfo);
+                    Value* pBL = yCbCrHelper.YCbCrWrappedSample(wrappedSampleInfo);
 
-                    pImageOpChroma = BilinearBlend(pLumaA, pLumaB, pTL, pTR, pBL, pBR);
+                    pImageOpChroma = yCbCrHelper.BilinearBlend(pLumaA, pLumaB, pTL, pTR, pBL, pBR);
                 }
             }
             else // vk::VK_FILTER_LINEAR
@@ -2298,34 +1667,34 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
                 if (subsampledY)
                 {
                     // Linear, Reconstructed xy chroma samples with explicit linear filtering
-                    Value* pTL = YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
+                    Value* pTL = yCbCrHelper.YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
 
                     xyChromaInfo.pI = pSubIPlusOne;
-                    Value* pTR = YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
+                    Value* pTR = yCbCrHelper.YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
 
                     xyChromaInfo.pJ = pSubJPlusOne;
-                    Value* pBR = YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
+                    Value* pBR = yCbCrHelper.YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
 
                     xyChromaInfo.pI = pI;
-                    Value* pBL = YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
+                    Value* pBL = yCbCrHelper.YCbCrReconstructLinearXYChromaSample(xyChromaInfo);
 
-                    pImageOpChroma = BilinearBlend(pLumaA, pLumaB, pTL, pTR, pBL, pBR);
+                    pImageOpChroma = yCbCrHelper.BilinearBlend(pLumaA, pLumaB, pTL, pTR, pBL, pBR);
                 }
                 else
                 {
                     // Linear, Reconstructed X chroma samples with explicit linear filtering
-                    Value* pTL = YCbCrReconstructLinearXChromaSample(xChromaInfo);
+                    Value* pTL = yCbCrHelper.YCbCrReconstructLinearXChromaSample(xChromaInfo);
 
                     xChromaInfo.pI = pSubIPlusOne;
-                    Value* pTR = YCbCrReconstructLinearXChromaSample(xChromaInfo);
+                    Value* pTR = yCbCrHelper.YCbCrReconstructLinearXChromaSample(xChromaInfo);
 
                     xChromaInfo.pJ = pSubJPlusOne;
-                    Value* pBR = YCbCrReconstructLinearXChromaSample(xChromaInfo);
+                    Value* pBR = yCbCrHelper.YCbCrReconstructLinearXChromaSample(xChromaInfo);
 
                     xChromaInfo.pI = pI;
-                    Value* pBL = YCbCrReconstructLinearXChromaSample(xChromaInfo);
+                    Value* pBL = yCbCrHelper.YCbCrReconstructLinearXChromaSample(xChromaInfo);
 
-                    pImageOpChroma = BilinearBlend(pLumaA, pLumaB, pTL, pTR, pBL, pBR);
+                    pImageOpChroma = yCbCrHelper.BilinearBlend(pLumaA, pLumaB, pTL, pTR, pBL, pBR);
                 }
             }
         }
@@ -2333,15 +1702,15 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
         {
             if (subsampledX)
             {
-                wrappedSampleInfo.pI = YCbCrCalculateImplicitChromaUV(xChromaOffset, pU);
+                wrappedSampleInfo.pI = yCbCrHelper.YCbCrCalculateImplicitChromaUV(xChromaOffset, pU);
             }
 
             if (subsampledY)
             {
-                wrappedSampleInfo.pJ = YCbCrCalculateImplicitChromaUV(yChromaOffset, pV);
+                wrappedSampleInfo.pJ = yCbCrHelper.YCbCrCalculateImplicitChromaUV(yChromaOffset, pV);
             }
 
-            pImageOpChroma = YCbCrWrappedSample(wrappedSampleInfo);
+            pImageOpChroma = yCbCrHelper.YCbCrWrappedSample(wrappedSampleInfo);
         }
     }
 
@@ -2355,11 +1724,11 @@ Value* BuilderImplImage::CreateImageYCbCrSample(
                                   pResult,
                                   { swizzleRFinal, swizzleGFinal, swizzleBFinal, swizzleAFinal });
 
-    pResult = YCbCrConvertColor(pResultTy,
-                                yCbCrModel,
-                                yCbCrRange,
-                                bits,
-                                pResult);
+    pResult = yCbCrHelper.YCbCrConvertColor(pResultTy,
+                                            yCbCrModel,
+                                            yCbCrRange,
+                                            bits,
+                                            pResult);
 
     return static_cast<Instruction*>(pResult);
 }

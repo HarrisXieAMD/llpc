@@ -30,11 +30,13 @@
   */
 
 #pragma once
-#include "llpc.h"
-#include "llpcDebug.h"
+#include "llpcBuilderImpl.h"
 
 namespace Llpc
 {
+
+using namespace llvm;
+
 // Represents the type of sampler filter.
 enum class SamplerFilter
 {
@@ -108,11 +110,122 @@ private:
     uint32_t m_channel;
 };
 
+// General YCbCr sample info
+struct YCbCrSampleInfo
+{
+    Type*              pResultTy;
+    uint32_t           dim;
+    uint32_t           flags;
+    Value*             pImageDesc;
+    Value*             pSamplerDesc;
+    ArrayRef<Value*>   address;
+    const std::string& instNameStr;
+    bool               isSample;
+};
+
+// YCbCr sample info for downsampled chroma channels in the X dimension
+struct XChromaSampleInfo
+{
+    YCbCrSampleInfo*   pYCbCrInfo;
+    Value*             pImageDesc1;
+    Value*             pI;
+    Value*             pJ;
+    Value*             pChromaWidth;
+    Value*             pChromaHeight;
+    ChromaLocation     xChromaOffset;
+};
+
+// YCbCr sample info for downsampled chroma channels in both X and Y dimension
+struct XYChromaSampleInfo : XChromaSampleInfo
+{
+    Value*             pImageDesc2;
+    uint32_t           planeNum;
+    ChromaLocation     yChromaOffset;
+};
+
+// YCbCr wrapped sample info
+struct YCbCrWrappedSampleInfo : XYChromaSampleInfo
+{
+    Value*             pImageDesc3;
+    bool               subsampledX;
+    bool               subsampledY;
+};
+
 // =====================================================================================================================
-// Represents LLPC sampler yCbCr conversion helper class
+// Represents LLPC sampler YCbCr conversion helper class
 class SamplerYCbCrHelper
 {
 public:
+    // Register Builder
+    inline void Register(BuilderImplImage* pBuilder) { m_pBuilder = pBuilder; }
+
+    // Unregister Builder
+    inline void UnRegister() { m_pBuilder = nullptr; }
+
+    SamplerYCbCrHelper() = default;
+
+    // Replace [beginBit, beginBit + adjustBits) bits with pData in specific pWord
+    Value* ReplaceBitsInWord(Value*   pWord,
+                             uint32_t beginBit,
+                             uint32_t adjustBits,
+                             Value*   pData);
+
+    // Implement transfer from ST coordinates to UV coordiantes operation
+    Value* TransferSTtoUVCoords(Value* pST,
+                                Value* pSize);
+
+    // Implement the adjustment of UV coordiantes when the sample location associated with
+    // downsampled chroma channels in the X/XY dimension occurs
+    Value* YCbCrCalculateImplicitChromaUV(ChromaLocation offset,
+                                          Value*         pUV);
+
+    // Transfer IJ coordinates from UV coordinates
+    Value* TransferUVtoIJCoords(SamplerFilter filter,
+                                Value*        pUV);
+
+    // Calculate UV offset to top-left pixel
+    Value* CalculateUVoffset(Value* pUV);
+
+    // Implement bilinear blending
+    Value* BilinearBlend(Value* pAlpha,
+                         Value* pBeta,
+                         Value* pTL,
+                         Value* pTR,
+                         Value* pBL,
+                         Value* pBR);
+
+    // Implement wrapped YCbCr sample
+    Value* YCbCrWrappedSample(YCbCrWrappedSampleInfo& wrapInfo);
+
+    // Implement reconstructed YCbCr sample operation for downsampled chroma channels in the X dimension
+    Value* YCbCrReconstructLinearXChromaSample(XChromaSampleInfo& xChromaInfo);
+
+    // Implement reconstructed YCbCr sample operation for downsampled chroma channels in both X and Y dimension
+    Value* YCbCrReconstructLinearXYChromaSample(XYChromaSampleInfo& xyChromaInfo);
+
+    // Implement interanl image sample for YCbCr conversion
+    Value* YCbCrCreateImageSampleInternal(SmallVectorImpl<Value*>& coords,
+                                          YCbCrSampleInfo*         pYCbCrInfo);
+
+    // Generate sampler descriptor for YCbCr conversion
+    Value* YCbCrGenerateSamplerDesc(Value*        pSamplerDesc,
+                                    SamplerFilter filter,
+                                    bool          forceExplicitReconstruction);
+
+    // Implement range expanding operation on checking whether the encoding uses full numerical range on chroma channel
+    Value* YCbCrRangeExpand(SamplerYCbCrRange  range,
+                            const uint32_t*    pBits,
+                            Value*             pSample);
+
+    // Implement the color transfer operation for conversion from YCbCr to RGB color model
+    Value* YCbCrConvertColor(Type*                       pResultTy,
+                             SamplerYCbCrModelConversion colorModel,
+                             SamplerYCbCrRange           range,
+                             uint32_t*                   pBits,
+                             Value*                      pImageOp);
+
+private:
+    BuilderImplImage* m_pBuilder;
 
 };
 
