@@ -1,0 +1,664 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="translator">
+      <UniqueIdentifier>{ad6afbef-514a-4355-bdc9-10ad390ea206}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{1bd96972-6e98-42f1-9281-70492e5d1d97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="context">
+      <UniqueIdentifier>{a2b43ee4-6fb4-4497-869d-d6584d41356b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="util">
+      <UniqueIdentifier>{7d8b3844-cffc-4a87-a903-bbebe86d5583}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lower">
+      <UniqueIdentifier>{1e1ebf76-e93e-4d49-8780-ead650cf2ff1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="patch">
+      <UniqueIdentifier>{3c9e6a27-1b62-417e-8c8e-7160b9a5c59c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imported">
+      <UniqueIdentifier>{50959650-687e-49c3-b152-58aabceb7bd4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imported\chip">
+      <UniqueIdentifier>{1e44686e-b48b-461a-813d-c755e3b6aa7d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imported\chip\gfx6">
+      <UniqueIdentifier>{706725a8-3545-4d5d-9b42-a822a53ea4a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imported\spirv">
+      <UniqueIdentifier>{d6107ca2-d816-46cd-9891-70f699d049c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imported\pal">
+      <UniqueIdentifier>{4a169a65-99bf-4525-af24-bfecde338d07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imported\chip\gfx9">
+      <UniqueIdentifier>{e592c8db-4b49-42ab-8cd1-d1915cdc786d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="patch\gfx6">
+      <UniqueIdentifier>{5dcaad3f-12b6-430e-afe8-7ab2452a2ed4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="patch\gfx9">
+      <UniqueIdentifier>{91b8eede-d5b0-4a61-838d-4dddf7b401a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="patch\gfx6\chip">
+      <UniqueIdentifier>{eb1d56be-412e-4d9e-a950-34160bee0446}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="patch\gfx9\chip">
+      <UniqueIdentifier>{3fd135a2-c31c-4cf0-8382-af413a2bb382}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="make">
+      <UniqueIdentifier>{a121f24f-7111-4392-8e9b-3b80cf436e1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="translator\include">
+      <UniqueIdentifier>{b43185c0-4c4f-4b24-bef0-8f9c802c2707}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="translator\lib">
+      <UniqueIdentifier>{90b3f957-125e-497a-971e-591ee004dc19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="translator\lib\SPIRV">
+      <UniqueIdentifier>{42be44d1-466d-46de-b81b-a5a2680eb310}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="translator\lib\SPIRV\libSPIRV">
+      <UniqueIdentifier>{124ce014-a092-42e2-9cde-49ae9fb3258f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imported\metrohash">
+      <UniqueIdentifier>{c04a9012-8ccd-4a7e-aae2-e573dbb8b2d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imported\metrohash\inc">
+      <UniqueIdentifier>{1f27b663-54a6-44a9-8d73-2496a46dc059}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="builder">
+      <UniqueIdentifier>{2df801ba-bbc8-426e-9bde-14992c2b8c53}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\llpc.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="context\llpcCompiler.h">
+      <Filter>context</Filter>
+    </ClInclude>
+    <ClInclude Include="context\llpcContext.h">
+      <Filter>context</Filter>
+    </ClInclude>
+    <ClInclude Include="context\llpcComputeContext.h">
+      <Filter>context</Filter>
+    </ClInclude>
+    <ClInclude Include="context\llpcGraphicsContext.h">
+      <Filter>context</Filter>
+    </ClInclude>
+    <ClInclude Include="lower\llpcSpirvLower.h">
+      <Filter>lower</Filter>
+    </ClInclude>
+    <ClInclude Include="lower\llpcSpirvLowerGlobal.h">
+      <Filter>lower</Filter>
+    </ClInclude>
+    <ClInclude Include="util\llpcInternal.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="lower\llpcSpirvLowerResourceCollect.h">
+      <Filter>lower</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcPatch.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcPatchDescriptorLoad.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcPatchEntryPointMutate.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="util\llpcEmuLib.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcCodeGenManager.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcPatchInOutImportExport.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcPatchLlvmIrInclusion.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="util\llpcDebug.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcSystemValues.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcVertexFetch.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcIntrinsDefs.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcFragColorExport.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\spirv\vfx.h">
+      <Filter>imported\spirv</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\spirv\spvgen.h">
+      <Filter>imported\spirv</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcPatchPushConstOp.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="context\llpcShaderCache.h">
+      <Filter>context</Filter>
+    </ClInclude>
+    <ClInclude Include="util\llpcFile.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcPatchResourceCollect.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\imported\pal\inc\core\palPipelineAbi.h">
+      <Filter>imported\pal</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcPatchBufferOp.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="context\llpcPipelineContext.h">
+      <Filter>context</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\gfx6\chip\llpcGfx6Chip.h">
+      <Filter>patch\gfx6\chip</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\gfx6\chip\llpcGfx6ConfigBuilder.h">
+      <Filter>patch\gfx6\chip</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\gfx9\chip\llpcGfx9Chip.h">
+      <Filter>patch\gfx9\chip</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\gfx9\chip\llpcGfx9ConfigBuilder.h">
+      <Filter>patch\gfx9\chip</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\gfx9\llpcShaderMerger.h">
+      <Filter>patch\gfx9</Filter>
+    </ClInclude>
+    <ClInclude Include="util\llpcPassDeadFuncRemove.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="lower\llpcSpirvLowerAlgebraTransform.h">
+      <Filter>lower</Filter>
+    </ClInclude>
+    <ClInclude Include="context\llpcShaderCacheManager.h">
+      <Filter>context</Filter>
+    </ClInclude>
+    <ClInclude Include="util\llpcPipelineDumper.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\llpcPipelineShaders.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\llpcUtil.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\imported\pal\inc\util\palUtil.h">
+      <Filter>imported\pal</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcAbiMetadata.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcConfigBuilderBase.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="lower\llpcSpirvLowerConstImmediateStore.h">
+      <Filter>lower</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\chip\gfx6\si_ci_vi_merged_enum.h">
+      <Filter>imported\chip\gfx6</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\chip\gfx6\si_ci_vi_merged_offset.h">
+      <Filter>imported\chip\gfx6</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\chip\gfx6\si_ci_vi_merged_registers.h">
+      <Filter>imported\chip\gfx6</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\chip\gfx6\si_ci_vi_merged_typedef.h">
+      <Filter>imported\chip\gfx6</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\chip\gfx9\gfx9_plus_merged_enum.h">
+      <Filter>imported\chip\gfx9</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\chip\gfx9\gfx9_plus_merged_offset.h">
+      <Filter>imported\chip\gfx9</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\chip\gfx9\gfx9_plus_merged_registers.h">
+      <Filter>imported\chip\gfx9</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\chip\gfx9\gfx9_plus_merged_typedef.h">
+      <Filter>imported\chip\gfx9</Filter>
+    </ClInclude>
+    <ClInclude Include="util\llpcPassManager.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="lower\llpcSpirvLowerInstMetaRemove.h">
+      <Filter>lower</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\gfx9\llpcNggLdsManager.h">
+      <Filter>patch\gfx9</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\gfx9\llpcNggPrimShader.h">
+      <Filter>patch\gfx9</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\include\LLVMSPIRVLib.h">
+      <Filter>translator\include</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\libSPIRV.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVBasicBlock.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVDebug.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVDecorate.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVEntry.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVEnum.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVError.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVErrorEnum.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\spirvExt.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVExtInst.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVFunction.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVInstruction.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVIsValidEnum.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVModule.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVNameMapEnum.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVOpCode.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVOpCodeEnum.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVStream.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVType.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVUtil.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\libSPIRV\SPIRVValue.h">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\bitutils.h">
+      <Filter>translator\lib\SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\hex_float.h">
+      <Filter>translator\lib\SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="translator\lib\SPIRV\SPIRVInternal.h">
+      <Filter>translator\lib\SPIRV</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\metrohash\inc\metrohash.h">
+      <Filter>imported\metrohash\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\metrohash\inc\metrohash64.h">
+      <Filter>imported\metrohash\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\metrohash\inc\metrohash128.h">
+      <Filter>imported\metrohash\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="imported\metrohash\inc\utils.h">
+      <Filter>imported\metrohash\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="lower\llpcSpirvLowerLoopUnrollControl.h">
+      <Filter>lower</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcPatchPeepholeOpt.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="builder\llpcBuilder.h">
+      <Filter>builder</Filter>
+    </ClInclude>
+    <ClInclude Include="builder\llpcBuilderImpl.h">
+      <Filter>builder</Filter>
+    </ClInclude>
+    <ClInclude Include="builder\llpcBuilderRecorder.h">
+      <Filter>builder</Filter>
+    </ClInclude>
+    <ClInclude Include="util\llpcElfReader.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\llpcElfWriter.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="lower\llpcSpirvLowerMemoryOp.h">
+      <Filter>lower</Filter>
+    </ClInclude>
+    <ClInclude Include="builder\llpcPipelineState.h">
+      <Filter>builder</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\imported\pal\inc\core\g_palPipelineAbiMetadata.h">
+      <Filter>imported\pal</Filter>
+    </ClInclude>
+    <ClInclude Include="lower\llpcSpirvLowerAccessChain.h">
+      <Filter>lower</Filter>
+    </ClInclude>
+    <ClInclude Include="patch\llpcPatchLoadScalarizer.h">
+      <Filter>patch</Filter>
+    </ClInclude>
+    <ClInclude Include="context\llpcRayTracingContext.h">
+      <Filter>context</Filter>
+    </ClInclude>
+    <ClInclude Include="lower\llpcSpirvLowerRayTracing.h">
+      <Filter>lower</Filter>
+    </ClInclude>
+    <ClInclude Include="lower\llpcSpirvLowerRayTracingBuiltIn.h">
+      <Filter>lower</Filter>
+    </ClInclude>
+    <ClInclude Include="util\llpcShaderModuleHelper.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="util\llpcTimerProfiler.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="builder\llpcBuilderContext.h" />
+    <ClInclude Include="builder\llpcShaderModes.h" />
+    <ClInclude Include="builder\llpcTargetInfo.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="context\llpcCompiler.cpp">
+      <Filter>context</Filter>
+    </ClCompile>
+    <ClCompile Include="context\llpcContext.cpp">
+      <Filter>context</Filter>
+    </ClCompile>
+    <ClCompile Include="context\llpcComputeContext.cpp">
+      <Filter>context</Filter>
+    </ClCompile>
+    <ClCompile Include="context\llpcGraphicsContext.cpp">
+      <Filter>context</Filter>
+    </ClCompile>
+    <ClCompile Include="lower\llpcSpirvLower.cpp">
+      <Filter>lower</Filter>
+    </ClCompile>
+    <ClCompile Include="lower\llpcSpirvLowerGlobal.cpp">
+      <Filter>lower</Filter>
+    </ClCompile>
+    <ClCompile Include="util\llpcInternal.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="lower\llpcSpirvLowerResourceCollect.cpp">
+      <Filter>lower</Filter>
+    </ClCompile>
+    <ClCompile Include="lower\llpcSpirvLowerTranslator.cpp">
+      <Filter>lower</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatch.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchDescriptorLoad.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchEntryPointMutate.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="util\llpcEmuLib.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcCodeGenManager.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchInOutImportExport.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchLlvmIrInclusion.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="util\llpcDebug.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcSystemValues.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcVertexFetch.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcFragColorExport.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchPushConstOp.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="context\llpcShaderCache.cpp">
+      <Filter>context</Filter>
+    </ClCompile>
+    <ClCompile Include="util\llpcFile.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchResourceCollect.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchBufferOp.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchCopyShader.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="context\llpcPipelineContext.cpp">
+      <Filter>context</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\gfx6\chip\llpcGfx6Chip.cpp">
+      <Filter>patch\gfx6\chip</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\gfx6\chip\llpcGfx6ConfigBuilder.cpp">
+      <Filter>patch\gfx6\chip</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\gfx9\chip\llpcGfx9Chip.cpp">
+      <Filter>patch\gfx9\chip</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\gfx9\chip\llpcGfx9ConfigBuilder.cpp">
+      <Filter>patch\gfx9\chip</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\gfx9\llpcShaderMerger.cpp">
+      <Filter>patch\gfx9</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcConfigBuilderBase.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="util\llpcPassDeadFuncRemove.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="lower\llpcSpirvLowerAlgebraTransform.cpp">
+      <Filter>lower</Filter>
+    </ClCompile>
+    <ClCompile Include="context\llpcShaderCacheManager.cpp">
+      <Filter>context</Filter>
+    </ClCompile>
+    <ClCompile Include="util\llpcPipelineDumper.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="util\llpcPipelineShaders.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="util\llpcUtil.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="lower\llpcSpirvLowerConstImmediateStore.cpp">
+      <Filter>lower</Filter>
+    </ClCompile>
+    <ClCompile Include="util\llpcPassManager.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchNullFragShader.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="lower\llpcSpirvLowerInstMetaRemove.cpp">
+      <Filter>lower</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchGroupOp.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\gfx9\llpcNggLdsManager.cpp">
+      <Filter>patch\gfx9</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\gfx9\llpcNggPrimShader.cpp">
+      <Filter>patch\gfx9</Filter>
+    </ClCompile>
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVBasicBlock.cpp">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVDebug.cpp">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVDecorate.cpp">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVEntry.cpp">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVFunction.cpp">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVInstruction.cpp">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVModule.cpp">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVStream.cpp">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVType.cpp">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="translator\lib\SPIRV\libSPIRV\SPIRVValue.cpp">
+      <Filter>translator\lib\SPIRV\libSPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="translator\lib\SPIRV\SPIRVReader.cpp">
+      <Filter>translator\lib\SPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="translator\lib\SPIRV\SPIRVUtil.cpp">
+      <Filter>translator\lib\SPIRV</Filter>
+    </ClCompile>
+    <ClCompile Include="lower\llpcSpirvLowerLoopUnrollControl.cpp">
+      <Filter>lower</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchPeepholeOpt.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchPreparePipelineAbi.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchSetupTargetFeatures.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="builder\llpcBuilder.cpp">
+      <Filter>builder</Filter>
+    </ClCompile>
+    <ClCompile Include="builder\llpcBuilderImpl.cpp">
+      <Filter>builder</Filter>
+    </ClCompile>
+    <ClCompile Include="builder\llpcBuilderImplMisc.cpp">
+      <Filter>builder</Filter>
+    </ClCompile>
+    <ClCompile Include="builder\llpcBuilderRecorder.cpp">
+      <Filter>builder</Filter>
+    </ClCompile>
+    <ClCompile Include="builder\llpcBuilderReplayer.cpp">
+      <Filter>builder</Filter>
+    </ClCompile>
+    <ClCompile Include="util\llpcStartStopTimer.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="builder\llpcBuilderImplDesc.cpp">
+      <Filter>builder</Filter>
+    </ClCompile>
+    <ClCompile Include="util\llpcElfReader.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="util\llpcElfWriter.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="lower\llpcSpirvLowerMemoryOp.cpp">
+      <Filter>lower</Filter>
+    </ClCompile>
+    <ClCompile Include="builder\llpcBuilderImplMatrix.cpp">
+      <Filter>builder</Filter>
+    </ClCompile>
+    <ClCompile Include="builder\llpcPipelineState.cpp">
+      <Filter>builder</Filter>
+    </ClCompile>
+    <ClCompile Include="builder\llpcBuilderImplImage.cpp">
+      <Filter>builder</Filter>
+    </ClCompile>
+    <ClCompile Include="lower\llpcSpirvLowerAccessChain.cpp">
+      <Filter>lower</Filter>
+    </ClCompile>
+    <ClCompile Include="builder\llpcBuilderImplArith.cpp">
+      <Filter>builder</Filter>
+    </ClCompile>
+    <ClCompile Include="builder\llpcBuilderImplInOut.cpp">
+      <Filter>builder</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchLoadScalarizer.cpp">
+      <Filter>patch</Filter>
+    </ClCompile>
+    <ClCompile Include="context\llpcRayTracingContext.cpp">
+      <Filter>context</Filter>
+    </ClCompile>
+    <ClCompile Include="lower\llpcSpirvLowerRayTracing.cpp">
+      <Filter>lower</Filter>
+    </ClCompile>
+    <ClCompile Include="lower\llpcSpirvLowerRayTracingBuiltIn.cpp">
+      <Filter>lower</Filter>
+    </ClCompile>
+    <ClCompile Include="patch\llpcPatchCheckShaderCache.cpp" />
+    <ClCompile Include="util\llpcShaderModuleHelper.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="util\llpcTimerProfiler.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="builder\llpcBuilderContext.cpp" />
+    <ClCompile Include="builder\llpcShaderModes.cpp" />
+    <ClCompile Include="builder\llpcTargetInfo.cpp" />
+    <ClCompile Include="builder\llpcBuilderImplSubgroup.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="make\Makefile.llpc">
+      <Filter>make</Filter>
+    </None>
+    <None Include="Makefile.apicompilerllpc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="translator\LICENSE.TXT">
+      <Filter>translator</Filter>
+    </Text>
+    <Text Include="CMakeLists.txt" />
+  </ItemGroup>
+</Project>
