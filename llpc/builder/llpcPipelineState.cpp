@@ -667,6 +667,11 @@ void PipelineState::RecordUserDataTable(
                 operands.push_back(ConstantAsMetadata::get(builder.getInt32(node.indirectSizeInDwords)));
                 break;
             }
+        case ResourceMappingNodeType::DescriptorYCbCrSampler:
+            {
+                m_haveConvertingSampler = true;
+                // fall through...
+            }
         default:
             {
                 // Operand 3: set
