@@ -327,6 +327,7 @@ if(ICD_BUILD_LLPC)
         util/llpcStartStopTimer.cpp
         util/llpcTimerProfiler.cpp
         util/llpcGfxRegHandler.cpp
+        util/llpcGfxRegHelper.cpp
         util/llpcUtil.cpp
     )
 else()
