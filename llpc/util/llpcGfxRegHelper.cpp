@@ -177,3 +177,112 @@ void SqImgSampRegHelper::SetReg(
         break;
     }
 }
+
+// =====================================================================================================================
+// SqImgSampReg Bits infomation look up table (Gfx9)
+static constexpr BitsInfo g_sqImgRsrcRegBitsGfx9[SqRsrcRegsCount] =
+{
+    { 0,  0, 32 }, // BaseAddress
+    { 1,  0,  8 }, // BaseAddressHi
+    { 1, 20,  9 }, // Format
+    { 2,  0, 14 }, // Width
+    { 2, 14, 14 }, // Height
+    { 3,  0, 12 }, // DstSelXYZW
+    { 3, 20,  5 }, // IsTileOpt
+    { 4,  0, 13 }, // Depth
+    { 4, 13, 12 }, // Pitch
+    { 4, 29,  3 }, // BcSwizzle
+    {},            // WidthLo
+    {},            // WidthHi
+};
+
+// =====================================================================================================================
+SqImgRsrcRegHelper::SqImgRsrcRegHelper(
+    Builder*      pBuilder,      // [in] Bound builder context
+    Value*        pRegister,     // [in] Bound register vec <n x i32>
+    GfxIpVersion* pGfxIpVersion) // [in] Target gfxIp version
+: GfxRegHelper(pBuilder, pRegister)
+{
+    m_pGfxIpVersion = pGfxIpVersion;
+
+    switch (pGfxIpVersion->major)
+    {
+    case 9:
+        m_bitsInfo = g_sqImgRsrcRegBitsGfx9;
+        break;
+    default:
+        llvm_unreachable("GfxIp is not supported!");
+        break;
+    }
+    m_bitsState = new BitsState[SqRsrcRegsCount];
+}
+
+// =====================================================================================================================
+// Acquire register value
+Value* SqImgRsrcRegHelper::GetReg(
+    SqRsrcRegs id) // Register ID
+{
+    switch (id)
+    {
+    case BaseAddress:
+    case Format:
+    case DstSelXYZW:
+    case Depth:
+    case BcSwizzle:
+        return GetRegCommon(id);
+    case Height:
+    case Pitch:
+        return m_pBuilder->CreateAdd(GetRegCommon(id), m_pInt32One);
+    case Width:
+        switch (m_pGfxIpVersion->major)
+        {
+        case 9:
+            return m_pBuilder->CreateAdd(GetRegCommon(id), m_pInt32One);
+        default:
+            llvm_unreachable("The current gfx is not supported!");
+            break;
+        }
+    case IsTileOpt:
+        return m_pBuilder->CreateICmpNE(GetRegCommon(id), m_pBuilder->getInt32(0));
+    default:
+        llvm_unreachable("Not implemented!");
+    }
+    return nullptr;
+}
+
+// =====================================================================================================================
+// Set register value
+void SqImgRsrcRegHelper::SetReg(
+    SqRsrcRegs id,     // Register ID
+    Value*     pParam) // [in] Param to be set
+{
+    switch (id)
+    {
+    case BaseAddress:
+    case BaseAddressHi:
+    case Format:
+    case DstSelXYZW:
+    case Depth:
+    case BcSwizzle:
+        SetRegCommon(id, pParam);
+        break;
+    case Height:
+    case Pitch:
+        SetRegCommon(id, m_pBuilder->CreateSub(pParam, m_pInt32One));
+        break;
+    case Width:
+        switch (m_pGfxIpVersion->major)
+        {
+        case 9:
+            SetRegCommon(id, m_pBuilder->CreateSub(pParam, m_pInt32One));
+            break;
+        default:
+            llvm_unreachable("The current gfx is not supported!");
+            break;
+        }
+        break;
+    case IsTileOpt:
+        llvm_unreachable("Set \"IsTileOpt\" is not allowed!");
+        break;
+    }
+}

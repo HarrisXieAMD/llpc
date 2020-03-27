@@ -101,4 +101,39 @@ public:
     void SetReg(SqSampRegs id, Value* pParam);
 };
 
+// SqImgRsrcRegisters Id
+enum SqRsrcRegs
+{
+    BaseAddress = 0,
+    BaseAddressHi,
+    Format,
+    Width, // only gfx9 and before
+    Height,
+    DstSelXYZW,
+    IsTileOpt,
+    Depth,
+    Pitch,
+    BcSwizzle,
+
+    // The following are introduced in gfx10.
+    WidthLo,
+    WidthHi,
+
+    SqRsrcRegsCount,
+};
+
+// =====================================================================================================================
+// Helper class for handling SqImgRsrcRegisters
+class SqImgRsrcRegHelper : public GfxRegHelper
+{
+public:
+    SqImgRsrcRegHelper(Builder* pBuilder, Value* pRegister, GfxIpVersion* pGfxIpVersion);
+
+    // Acquire register value
+    Value* GetReg(SqRsrcRegs id);
+
+    // Set register value
+    void SetReg(SqRsrcRegs id, Value* pParam);
+};
+
 } // lgc
