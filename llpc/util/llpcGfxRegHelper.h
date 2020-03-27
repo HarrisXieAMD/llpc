@@ -77,4 +77,28 @@ protected:
     GfxIpVersion*   m_pGfxIpVersion;
 };
 
+// SqImgSampRegisters Id
+enum SqSampRegs
+{
+    FilterMode = 0,
+    xyMagFilter,
+    xyMinFilter,
+
+    SqSampRegsCount,
+};
+
+// =====================================================================================================================
+// Helper class for handling SqImgRsrcRegisters
+class SqImgSampRegHelper : public GfxRegHelper
+{
+public:
+    SqImgSampRegHelper(Builder* pBuilder, Value* pRegister, GfxIpVersion* pGfxIpVersion);
+
+    // Acquire register value
+    Value* GetReg(SqSampRegs id);
+
+    // Set register value
+    void SetReg(SqSampRegs id, Value* pParam);
+};
+
 } // lgc

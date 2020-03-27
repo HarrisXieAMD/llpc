@@ -109,3 +109,71 @@ void GfxRegHelper::SetRegCombine(
     SetRegCommon(idLo, pDataLo);
     SetRegCommon(idHi, pDataHi);
 }
+
+// =====================================================================================================================
+// SqImgSampReg Bits infomation look up table (Gfx9-10)
+static constexpr BitsInfo g_sqImgSampRegBitsGfx9[SqSampRegsCount] =
+{
+    { 0, 30, 2 }, // FilterMode
+    { 2, 20, 2 }, // XyMagFilter
+    { 2, 22, 2 }, // XyMinFilter
+};
+
+// =====================================================================================================================
+SqImgSampRegHelper::SqImgSampRegHelper(
+    Builder*      pBuilder,      // [in] Bound builder context
+    Value*        pRegister,     // [in] Bound register vec <n x i32>
+    GfxIpVersion* pGfxIpVersion) // [in] Target gfxIp version
+: GfxRegHelper(pBuilder, pRegister)
+{
+    m_pGfxIpVersion = pGfxIpVersion;
+
+    switch (pGfxIpVersion->major)
+    {
+    case 9:
+    case 10:
+        m_bitsInfo = g_sqImgSampRegBitsGfx9;
+        break;
+    default:
+        llvm_unreachable("GfxIp is not supported!");
+        break;
+    }
+    m_bitsState = new BitsState[SqSampRegsCount];
+}
+
+// =====================================================================================================================
+// Acquire register value
+Value* SqImgSampRegHelper::GetReg(
+    SqSampRegs id) // Register ID
+{
+    switch (id)
+    {
+    case FilterMode:
+    case xyMagFilter:
+    case xyMinFilter:
+        return GetRegCommon(id);
+    default:
+        llvm_unreachable("Not implemented!");
+        break;
+    }
+    return nullptr;
+}
+
+// =====================================================================================================================
+// Set register value
+void SqImgSampRegHelper::SetReg(
+    SqSampRegs id,     // Register ID
+    Value*     pParam) // [in] Param to be set
+{
+    switch (id)
+    {
+    case FilterMode:
+    case xyMagFilter:
+    case xyMinFilter:
+        SetRegCommon(id, pParam);
+        break;
+    default:
+        llvm_unreachable("Set \"IsTileOpt\" is not allowed!");
+        break;
+    }
+}
