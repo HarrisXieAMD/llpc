@@ -197,6 +197,24 @@ static constexpr BitsInfo g_sqImgRsrcRegBitsGfx9[SqRsrcRegsCount] =
 };
 
 // =====================================================================================================================
+// SqImgSampReg Bits infomation look up table (Gfx10)
+static constexpr BitsInfo g_sqImgRsrcRegBitsGfx10[SqRsrcRegsCount] =
+{
+    { 0,  0, 32 }, // BaseAddress
+    { 1,  0,  8 }, // BaseAddressHi
+    { 1, 20,  9 }, // Format
+    {},            // Width
+    { 2, 14, 16 }, // Height
+    { 3,  0, 12 }, // DstSelXYZW
+    { 3, 20,  5 }, // IsTileOpt
+    { 4,  0, 16 }, // Depth
+    {},            // Pitch
+    { 3, 25,  3 }, // BcSwizzle
+    { 1, 30,  2 }, // WidthLo
+    { 2,  0, 14 }, // WidthHi
+};
+
+// =====================================================================================================================
 SqImgRsrcRegHelper::SqImgRsrcRegHelper(
     Builder*      pBuilder,      // [in] Bound builder context
     Value*        pRegister,     // [in] Bound register vec <n x i32>
@@ -209,6 +227,9 @@ SqImgRsrcRegHelper::SqImgRsrcRegHelper(
     {
     case 9:
         m_bitsInfo = g_sqImgRsrcRegBitsGfx9;
+        break;
+    case 10:
+        m_bitsInfo = g_sqImgRsrcRegBitsGfx10;
         break;
     default:
         llvm_unreachable("GfxIp is not supported!");
@@ -238,6 +259,8 @@ Value* SqImgRsrcRegHelper::GetReg(
         {
         case 9:
             return m_pBuilder->CreateAdd(GetRegCommon(id), m_pInt32One);
+        case 10:
+            return m_pBuilder->CreateAdd(GetRegCombine(WidthLo, WidthHi), m_pInt32One);
         default:
             llvm_unreachable("The current gfx is not supported!");
             break;
@@ -275,6 +298,9 @@ void SqImgRsrcRegHelper::SetReg(
         {
         case 9:
             SetRegCommon(id, m_pBuilder->CreateSub(pParam, m_pInt32One));
+            break;
+        case 10:
+            SetRegCombine(WidthLo, WidthHi, m_pBuilder->CreateSub(pParam, m_pInt32One));
             break;
         default:
             llvm_unreachable("The current gfx is not supported!");
