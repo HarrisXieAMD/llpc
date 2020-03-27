@@ -69,6 +69,7 @@ ifeq ($(ICD_BUILD_LLPC), 1)
         llpcBuilderReplayer.cpp             \
         llpcPipelineState.cpp               \
         llpcShaderModes.cpp                 \
+        llpcYCbCrAddressHelper.cpp          \
         llpcTargetInfo.cpp
 
     # llpc/context
