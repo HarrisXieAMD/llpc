@@ -332,6 +332,7 @@ private:
 // Builder implementation subclass for image operations
 class BuilderImplImage : virtual public BuilderImplBase
 {
+    friend class SamplerYCbCrHelper;
 public:
     BuilderImplImage(BuilderContext* pBuilderContext) : BuilderImplBase(pBuilderContext) {}
 

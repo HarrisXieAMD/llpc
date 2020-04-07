@@ -174,6 +174,9 @@ PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/util
 )
 
+set(VULKAN_HEADER_PATH ${XGL_ICD_PATH}/api/include/khronos)
+target_include_directories(LLVMlgc PRIVATE ${VULKAN_HEADER_PATH})
+
 # lgc/builder
 target_sources(LLVMlgc PRIVATE
     builder/llpcBuilder.cpp
@@ -192,6 +195,7 @@ target_sources(LLVMlgc PRIVATE
     builder/llpcPipelineState.cpp
     builder/llpcShaderModes.cpp
     builder/llpcYCbCrAddressHandler.cpp
+    builder/llpcSamplerYCbCrHandler.cpp
     builder/llpcTargetInfo.cpp
 )
 

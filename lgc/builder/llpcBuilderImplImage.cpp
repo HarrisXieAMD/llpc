@@ -28,6 +28,8 @@
  * @brief LLPC source file: implementation of Builder methods for image operations
  ***********************************************************************************************************************
  */
+
+#include "llpcSamplerYCbCrHandler.h"
 #include "llpcBuilderImpl.h"
 #include "llpcInternal.h"
 #include "llpcTargetInfo.h"
@@ -1312,7 +1314,54 @@ Value* BuilderImplImage::CreateImageSampleConvert(
     ArrayRef<Value*>        address,                // Address and other arguments
     const Twine&            instName)               // [in] Name to give instruction(s)
 {
-    llvm_unreachable("Not yet implemented");
+    Value* pResult = nullptr;
+
+    // Extract YCbCr meta data
+    SamplerYCbCrConversionMetaData yCbCrMetaData = {};
+    Value* pYCbCrSamplerDesc = CreateExtractValue(pConvertingSamplerDesc, 0);
+    yCbCrMetaData.word0.u32All = dyn_cast<ConstantInt>(CreateExtractElement(pYCbCrSamplerDesc, getInt64(4)))->getZExtValue();
+    yCbCrMetaData.word1.u32All = dyn_cast<ConstantInt>(CreateExtractElement(pYCbCrSamplerDesc, getInt64(5)))->getZExtValue();
+    yCbCrMetaData.word2.u32All = dyn_cast<ConstantInt>(CreateExtractElement(pYCbCrSamplerDesc, getInt64(6)))->getZExtValue();
+    yCbCrMetaData.word3.u32All = dyn_cast<ConstantInt>(CreateExtractElement(pYCbCrSamplerDesc, getInt64(7)))->getZExtValue();
+
+    // Only the first 4 DWORDs are sampler descriptor, we need to extract these values under any condition
+    // Init sample descriptor for luma channel
+    Value* pSamplerDescLuma = CreateShuffleVector(pYCbCrSamplerDesc, pYCbCrSamplerDesc, { 0, 1, 2, 3 });
+
+    YCbCrSampleInfo sampleInfoLuma = {pResultTy, dim, flags, pImageDesc, pSamplerDescLuma, address, instName.str(), true};
+
+    GfxIpVersion gfxIpVersion = GetPipelineState()->GetTargetInfo().GetGfxIpVersion();
+
+    // Init SamplerYCbCrHelper
+    SamplerYCbCrHelper yCbCrHelper(this, yCbCrMetaData, &sampleInfoLuma, &gfxIpVersion);
+
+    // Prepare the coordinate and derivatives, which might also change the dimension.
+    SmallVector<Value*, 4> coords;
+    SmallVector<Value*, 6> derivatives;
+
+    Value* pProjective = address[ImageAddressIdxProjective];
+    if (pProjective != nullptr)
+    {
+        pProjective = CreateFDiv(ConstantFP::get(pProjective->getType(), 1.0), pProjective);
+    }
+
+    Value* pCoord = address[ImageAddressIdxCoordinate];
+    assert((pCoord->getType()->getScalarType()->isFloatTy()) ||
+           (pCoord->getType()->getScalarType()->isHalfTy()));
+
+    dim = PrepareCoordinate(dim,
+                            pCoord,
+                            pProjective,
+                            address[ImageAddressIdxDerivativeX],
+                            address[ImageAddressIdxDerivativeY],
+                            coords,
+                            derivatives);
+
+    yCbCrHelper.SetCoord(coords[0], coords[1]);
+    yCbCrHelper.SampleYCbCrData();
+    pResult = yCbCrHelper.ConvertColorSpace();
+
+    return static_cast<Instruction*>(pResult);
 }
 
 // =====================================================================================================================
