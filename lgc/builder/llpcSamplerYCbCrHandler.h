@@ -258,6 +258,7 @@ public:
                              SamplerYCbCrRange           range,
                              uint32_t*                   pBits,
                              llvm::Value*                      pImageOp);
+    std::vector<llvm::Value*>             m_pImgDescChromas;
 
 private:
     SamplerYCbCrConversionMetaData* m_pMetaData;
@@ -295,7 +296,6 @@ private:
     llvm::Value*                          m_pSamplerDescLuma;
     llvm::Value*                          m_pImgDescLuma;
     llvm::Value*                          m_pSamplerDescChroma;
-    std::vector<llvm::Value*>             m_pImgDescChromas;
     llvm::Value*                          m_pYCbCrData;
     llvm::Value*                          m_pRGBAData;
     llvm::Type*                           m_pResultType;

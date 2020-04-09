@@ -1357,6 +1357,50 @@ Value* BuilderImplImage::CreateImageSampleConvert(
                             coords,
                             derivatives);
 
+    bool dumpSRD(false);
+    if (dumpSRD)
+    {
+        Value* r;
+        Value* g;
+        Value* b;
+        Value* a;
+
+        int planeNum = 1;
+
+        Value* pWord0 = CreateExtractElement(yCbCrHelper.m_pImgDescChromas[planeNum] ,getInt64(0));
+        Value* pWord1 = CreateExtractElement(yCbCrHelper.m_pImgDescChromas[planeNum] ,getInt64(1));
+        Value* pWord2 = CreateExtractElement(yCbCrHelper.m_pImgDescChromas[planeNum] ,getInt64(2));
+        Value* pWord3 = CreateExtractElement(yCbCrHelper.m_pImgDescChromas[planeNum] ,getInt64(3));
+        Value* pWord4 = CreateExtractElement(yCbCrHelper.m_pImgDescChromas[planeNum] ,getInt64(4));
+        Value* pWord5 = CreateExtractElement(yCbCrHelper.m_pImgDescChromas[planeNum] ,getInt64(5));
+        Value* pWord6 = CreateExtractElement(yCbCrHelper.m_pImgDescChromas[planeNum] ,getInt64(6));
+        Value* pWord7 = CreateExtractElement(yCbCrHelper.m_pImgDescChromas[planeNum] ,getInt64(7));
+
+        int upper = 1;
+        if (upper)
+        {
+            r = CreateBitCast(pWord0,     getFloatTy());
+            g = CreateBitCast(pWord1, getFloatTy());
+            b = CreateBitCast(pWord2, getFloatTy());
+            a = CreateBitCast(pWord3, getFloatTy());
+        }
+        else
+        {
+            r = CreateBitCast(pWord4, getFloatTy());
+            g = CreateBitCast(pWord5,     getFloatTy());
+            b = CreateBitCast(pWord6,     getFloatTy());
+            a = CreateBitCast(pWord7,     getFloatTy());
+        }
+
+        pResult = UndefValue::get(pResultTy);
+        pResult = CreateInsertElement(pResult, r, getInt64(0));
+        pResult = CreateInsertElement(pResult, g, getInt64(1));
+        pResult = CreateInsertElement(pResult, b, getInt64(2));
+        pResult = CreateInsertElement(pResult, a, getInt64(3));
+
+        return static_cast<Instruction*>(pResult);
+    }
+
     yCbCrHelper.SetCoord(coords[0], coords[1]);
     yCbCrHelper.SampleYCbCrData();
     pResult = yCbCrHelper.ConvertColorSpace();

@@ -99,6 +99,7 @@ private:
     // Descriptor size
     static const uint32_t  DescriptorSizeResource      = 8 * sizeof(uint32_t);
     static const uint32_t  DescriptorSizeSampler       = 4 * sizeof(uint32_t);
+    static const uint32_t  DescriptorSizeSamplerYCbCr  = 8 * sizeof(uint32_t);
     static const uint32_t  DescriptorSizeBuffer        = 4 * sizeof(uint32_t);
     static const uint32_t  DescriptorSizeBufferCompact = 2 * sizeof(uint32_t);
 

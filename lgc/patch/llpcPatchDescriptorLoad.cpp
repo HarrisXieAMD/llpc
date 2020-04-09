@@ -248,6 +248,9 @@ Value* PatchDescriptorLoad::GetDescPtrAndStride(
             case ResourceNodeType::DescriptorCombinedTexture:
                 pStride = builder.getInt32((DescriptorSizeResource + DescriptorSizeSampler) / 4);
                 break;
+            case ResourceNodeType::DescriptorYCbCrSampler:
+                pStride = builder.getInt32(DescriptorSizeSamplerYCbCr / 4);
+                break;
             default:
                 llvm_unreachable("Unexpected resource node type");
                 break;
