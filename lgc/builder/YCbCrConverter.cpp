@@ -277,6 +277,8 @@ Value *YCbCrConverter::createImageSampleInternal(SmallVectorImpl<Value *> &coord
 
   coords = m_builder->CreateInsertElement(coords, coordsIn[1], uint64_t(1));
 
+  coords = m_builder->CreateInsertElement(coords, m_coordZ, uint64_t(2));
+
   return m_builder->CreateImageSampleGather(ycbcrInfo->resultTy, ycbcrInfo->dim, ycbcrInfo->flags, coords,
                                             ycbcrInfo->imageDesc, ycbcrInfo->samplerDesc, ycbcrInfo->address,
                                             ycbcrInfo->instNameStr, ycbcrInfo->isSample);
@@ -298,6 +300,7 @@ YCbCrConverter::YCbCrConverter(ImageBuilder *builder, const SamplerYCbCrConversi
   setYCbCrSampleInfo(ycbcrSampleInfo);
   genSamplerDescChroma();
   genImgDescChroma();
+  setCoord();
 }
 
 // =====================================================================================================================
@@ -414,11 +417,12 @@ Value *YCbCrConverter::convertColorSpace() {
 // =====================================================================================================================
 // Set the ST coords
 //
-// @param coordS : Coordinate S
-// @param coordT : Coordinate T
-void YCbCrConverter::setCoord(Value *coordS, Value *coordT) {
-  m_coordS = coordS;
-  m_coordT = coordT;
+// @param coords : Coordinate Vector
+void YCbCrConverter::setCoord() {
+  Value* coords = m_ycbcrSampleInfo->address[Builder::ImageAddressIdxCoordinate];
+  m_coordS = m_builder->CreateExtractElement(coords, m_builder->getInt64(0));
+  m_coordT = m_builder->CreateExtractElement(coords, m_builder->getInt64(1));
+  m_coordZ = m_builder->CreateExtractElement(coords, m_builder->getInt64(2));
 
   m_coordU = transferSTtoUVCoords(m_coordS, m_width);
   m_coordV = transferSTtoUVCoords(m_coordT, m_height);
